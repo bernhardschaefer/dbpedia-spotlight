@@ -58,7 +58,7 @@ public class SpotlightConfiguration {
     @Deprecated
     public static String DEFAULT_LANGUAGE_I18N_CODE = "en";
 
-    public enum DisambiguationPolicy {Document, Occurrences, CuttingEdge, Default}
+    public enum DisambiguationPolicy {Document, Occurrences, CuttingEdge, Default, GraphBased}
 
     private String dbpediaResource="http://dbpedia.org/resource/";
 

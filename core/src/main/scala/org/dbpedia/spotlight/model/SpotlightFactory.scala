@@ -39,6 +39,7 @@ import com.aliasi.util.AbstractExternalizable
 import com.aliasi.dict.Dictionary
 import org.dbpedia.spotlight.exceptions.ConfigurationException
 import io.Source
+import org.dbpedia.spotlight.graphdb.SpotlightGraphDisambiguator
 
 /**
  * This class contains many of the "defaults" for DBpedia Spotlight.
@@ -163,6 +164,8 @@ class SpotlightFactory(val configuration: SpotlightConfiguration) {
             disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new DefaultDisambiguator(contextSearcher)))
         } else if (policy == SpotlightConfiguration.DisambiguationPolicy.CuttingEdge) {
             disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new CuttingEdgeDisambiguator(contextSearcher)))
+        } else if (policy == SpotlightConfiguration.DisambiguationPolicy.GraphBased) {
+            disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new GraphBasedDisambiguator(candidateSearcher)))
         } else { // by default use Occurrences
             disambiguators.getOrElse(SpotlightConfiguration.DisambiguationPolicy.Occurrences, new ParagraphDisambiguatorJ(new DefaultDisambiguator(contextSearcher)))
         }
