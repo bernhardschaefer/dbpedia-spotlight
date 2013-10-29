@@ -11,22 +11,22 @@ public class DBpediaSurfaceFormSenseScore implements SurfaceFormSenseScore<DBped
 	private final DBpediaSense sense;
 	private double score;
 
-	public DBpediaSurfaceFormSenseScore(DBpediaSurfaceForm dbpediaSurfaceForm, DBpediaSense sense) {
+	public DBpediaSurfaceFormSenseScore(DBpediaSurfaceForm dbpediaSurfaceForm, DBpediaSense sense, double score) {
 		this.surfaceForm = dbpediaSurfaceForm;
 		this.sense = sense;
-
+		this.score = score;
 	}
 
 	public DBpediaSurfaceFormSenseScore(SurfaceFormOccurrence surfaceFormOccurrence, DBpediaResource resource,
 			double score) {
 		this.surfaceForm = new DBpediaSurfaceForm(surfaceFormOccurrence);
 		this.sense = new DBpediaSense(resource);
-		this.setScore(score);
+		this.score = score;
 	}
 
 	@Override
 	public int compareTo(SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> o) {
-		return Double.compare(o.getScore(), getScore());
+		return Double.compare(getScore(), o.getScore());
 	}
 
 	@Override
@@ -47,6 +47,12 @@ public class DBpediaSurfaceFormSenseScore implements SurfaceFormSenseScore<DBped
 	@Override
 	public DBpediaSurfaceForm surfaceForm() {
 		return surfaceForm;
+	}
+
+	@Override
+	public String toString() {
+		return new StringBuilder().append(surfaceForm.toString()).append(": ").append(sense.toString()).append(" --> ")
+				.append(score).toString();
 	}
 
 }

@@ -61,7 +61,7 @@ class GraphBasedDisambiguator(val candidateSearcher: CandidateSearcher) extends 
      * @throws org.dbpedia.spotlight.exceptions.InputException
      */
     def disambiguate(paragraph: Paragraph): List[DBpediaResourceOccurrence] = {
-        asBuffer(disambiguator.disambiguate(paragraph.occurrences.asJava)).toList
+        disambiguator.disambiguate(paragraph.occurrences.asJava).asScala.toList
     }
 
     /**

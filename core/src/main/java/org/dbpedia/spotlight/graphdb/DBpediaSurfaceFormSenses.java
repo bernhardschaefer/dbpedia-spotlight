@@ -41,4 +41,9 @@ public class DBpediaSurfaceFormSenses implements SurfaceFormSenses<DBpediaSurfac
 		return surfaceForm;
 	}
 
+	@Override
+	public String toString() {
+		return surfaceForm.toString() + ": " + senses.toString();
+	}
+
 }

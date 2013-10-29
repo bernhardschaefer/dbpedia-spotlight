@@ -3,7 +3,6 @@ package org.dbpedia.spotlight.graphdb;
 import java.util.Collection;
 
 import org.dbpedia.spotlight.model.DBpediaResource;
-import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
 
 import com.tinkerpop.blueprints.Vertex;
 
@@ -12,13 +11,20 @@ import de.unima.dws.dbpediagraph.graphdb.model.ModelFactory;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenses;
 
+/**
+ * Concrete factory as singleton for creating dbpedia related sense and surface
+ * form instances.
+ * 
+ * @author Bernhard Schäfer
+ * 
+ */
 public enum DBpediaModelFactory implements ModelFactory<DBpediaSurfaceForm, DBpediaSense> {
 	INSTANCE;
 
 	@Override
-	public SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> createInitialSurfaceFormSenseScore(
-			DBpediaSurfaceForm surfaceForm, DBpediaSense sense) {
-		return new DBpediaSurfaceFormSenseScore(surfaceForm, sense);
+	public SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> newSurfaceFormSenseScore(
+			DBpediaSurfaceForm surfaceForm, DBpediaSense sense, double score) {
+		return new DBpediaSurfaceFormSenseScore(surfaceForm, sense, score);
 	}
 
 	@Override
@@ -34,8 +40,7 @@ public enum DBpediaModelFactory implements ModelFactory<DBpediaSurfaceForm, DBpe
 	@Override
 	public SurfaceFormSenses<DBpediaSurfaceForm, DBpediaSense> newSurfaceFormSenses(Collection<DBpediaSense> senses,
 			String name) {
-		return new DBpediaSurfaceFormSenses(new DBpediaSurfaceForm(new SurfaceFormOccurrence(
-				new org.dbpedia.spotlight.model.SurfaceForm(name), null, 0)), senses);
+		throw new UnsupportedOperationException();
 	}
 
 }

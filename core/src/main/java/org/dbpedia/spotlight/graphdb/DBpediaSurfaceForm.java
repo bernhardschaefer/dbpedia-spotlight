@@ -20,4 +20,9 @@ public class DBpediaSurfaceForm implements SurfaceForm {
 		return surfaceFormOccurrence;
 	}
 
+	@Override
+	public String toString() {
+		return name();
+	}
+
 }
