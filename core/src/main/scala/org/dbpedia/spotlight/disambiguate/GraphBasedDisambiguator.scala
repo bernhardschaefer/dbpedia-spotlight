@@ -24,17 +24,16 @@ import org.dbpedia.spotlight.lucene.similarity._
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.apache.lucene.search.Explanation
 import org.dbpedia.spotlight.model._
-import org.dbpedia.spotlight.lucene.disambiguate.{MixedWeightsDisambiguator, MergedOccurrencesDisambiguator}
-import org.dbpedia.spotlight.exceptions.{ItemNotFoundException, SearchException, InputException}
+import org.dbpedia.spotlight.lucene.disambiguate.{ MixedWeightsDisambiguator, MergedOccurrencesDisambiguator }
+import org.dbpedia.spotlight.exceptions.{ ItemNotFoundException, SearchException, InputException }
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
 import org.dbpedia.spotlight.graphdb.SpotlightGraphDisambiguator
 
-class GraphBasedDisambiguator(val candidateSearcher: CandidateSearcher) extends Disambiguator with ParagraphDisambiguator  {
+class GraphBasedDisambiguator(val candidateSearcher: CandidateSearcher) extends Disambiguator with ParagraphDisambiguator {
 
     SpotlightLog.info(this.getClass, "Initializing disambiguator object ...")
 
-    val disambiguator : Disambiguator = new SpotlightGraphDisambiguator(candidateSearcher)
+    val disambiguator: CollectiveDisambiguator = new SpotlightGraphDisambiguator(candidateSearcher)
 
     SpotlightLog.info(this.getClass, "Done.")
 
@@ -78,19 +77,18 @@ class GraphBasedDisambiguator(val candidateSearcher: CandidateSearcher) extends 
     @throws(classOf[ItemNotFoundException])
     @throws(classOf[InputException])
     def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
-        paragraph.occurrences.foldLeft(Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]]())
-            { (acc,o) => acc + (o -> asScalaBuffer(disambiguator.bestK(o,k)).toList) }
+        disambiguator.bestK(paragraph.occurrences.asJava, k).asScala.mapValues(_.asScala.toList).toMap
     }
 
-    def name() : String = {
-        "Default:"+disambiguator.name
+    def name(): String = {
+        "Default:" + disambiguator.name
     }
 
-    def ambiguity(sf : SurfaceForm) : Int = {
+    def ambiguity(sf: SurfaceForm): Int = {
         disambiguator.ambiguity(sf)
     }
 
-    def support(resource : DBpediaResource) : Int = {
+    def support(resource: DBpediaResource): Int = {
         disambiguator.support(resource)
     }
 
@@ -99,15 +97,15 @@ class GraphBasedDisambiguator(val candidateSearcher: CandidateSearcher) extends 
     }
 
     @throws(classOf[SearchException])
-    def explain(goldStandardOccurrence: DBpediaResourceOccurrence, nExplanations: Int) : java.util.List[Explanation] = {
+    def explain(goldStandardOccurrence: DBpediaResourceOccurrence, nExplanations: Int): java.util.List[Explanation] = {
         disambiguator.explain(goldStandardOccurrence, nExplanations)
     }
 
-    def contextTermsNumber(resource : DBpediaResource) : Int = {
+    def contextTermsNumber(resource: DBpediaResource): Int = {
         disambiguator.contextTermsNumber(resource)
     }
 
-    def averageIdf(context : Text) : Double = {
+    def averageIdf(context: Text): Double = {
         disambiguator.averageIdf(context)
     }
 

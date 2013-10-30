@@ -1,7 +1,5 @@
 package org.dbpedia.spotlight.graphdb;
 
-import java.util.Collection;
-
 import org.dbpedia.spotlight.model.DBpediaResource;
 
 import com.tinkerpop.blueprints.Vertex;
@@ -9,7 +7,6 @@ import com.tinkerpop.blueprints.Vertex;
 import de.unima.dws.dbpediagraph.graphdb.Graphs;
 import de.unima.dws.dbpediagraph.graphdb.model.ModelFactory;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenses;
 
 /**
  * Concrete factory as singleton for creating dbpedia related sense and surface
@@ -22,12 +19,6 @@ public enum DBpediaModelFactory implements ModelFactory<DBpediaSurfaceForm, DBpe
 	INSTANCE;
 
 	@Override
-	public SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> newSurfaceFormSenseScore(
-			DBpediaSurfaceForm surfaceForm, DBpediaSense sense, double score) {
-		return new DBpediaSurfaceFormSenseScore(surfaceForm, sense, score);
-	}
-
-	@Override
 	public DBpediaSense newSense(String uri) {
 		return new DBpediaSense(new DBpediaResource(uri));
 	}
@@ -38,9 +29,14 @@ public enum DBpediaModelFactory implements ModelFactory<DBpediaSurfaceForm, DBpe
 	}
 
 	@Override
-	public SurfaceFormSenses<DBpediaSurfaceForm, DBpediaSense> newSurfaceFormSenses(Collection<DBpediaSense> senses,
-			String name) {
+	public DBpediaSurfaceForm newSurfaceForm(String name) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> newSurfaceFormSenseScore(
+			DBpediaSurfaceForm surfaceForm, DBpediaSense sense, double score) {
+		return new DBpediaSurfaceFormSenseScore(surfaceForm, sense, score);
 	}
 
 }
