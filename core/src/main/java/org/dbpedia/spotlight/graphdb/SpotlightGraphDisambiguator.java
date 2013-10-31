@@ -35,8 +35,7 @@ import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionSettings;
 import de.unima.dws.dbpediagraph.graphdb.util.CollectionUtils;
 
 /**
- * Graph based disambiguator compatible with the spotlight interface of
- * {@link Disambiguator}.
+ * Graph based disambiguator compatible with the spotlight interface of {@link Disambiguator}.
  * 
  * @author Bernhard Schäfer
  * 
@@ -55,7 +54,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	};
 
 	public static List<DBpediaSense> convertToSenses(Collection<DBpediaResource> resources) {
-		List<DBpediaSense> senses = new ArrayList<>();
+		List<DBpediaSense> senses = new ArrayList<>(resources.size());
 		for (DBpediaResource resource : resources)
 			senses.add(new DBpediaSense(resource));
 		return senses;
@@ -73,7 +72,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			for (SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> senseScore : entry.getValue()) {
 				DBpediaResource resource = senseScore.sense().getResource();
 				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
-						senseScore.getScore()));
+						senseScore.score()));
 			}
 			resultMap.put(sFO, occs);
 		}
@@ -85,10 +84,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	private final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator;
 
 	/**
-	 * The only relevant method is
-	 * {@link CandidateSearcher#getCandidates(SurfaceForm)}
+	 * The only relevant method is {@link CandidateSearcher#getCandidates(SurfaceForm)}
 	 */
-	CandidateSearcher searcher;
+	private final CandidateSearcher searcher;
 
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
 		this(DEFAULT_DISAMBIGUATOR, SubgraphConstructionSettings.getDefault(), searcher);
@@ -106,30 +104,18 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			int k) throws SearchException {
 		logger.info("Using " + getClass().getSimpleName());
 
-		Graph dbpediaGraph = GraphFactory.getDBpediaGraph();
-		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newDefaultImplementation(dbpediaGraph,
-				subgraphConstructionSettings);
-
+		// get sense candidates
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = getSFOsCandidatesMap(occurrences);
 
+		// create subgraph
+		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(
+				GraphFactory.getDBpediaGraph(), subgraphConstructionSettings);
 		Graph subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses);
 
+		// disambiguate using subgraph
 		Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK = graphDisambiguator
 				.bestK(surfaceFormsSenses, subgraph, k);
 
-		// TODO think about how to get rid of the generic model in
-		// dbpedia-graphdb using maps;
-
-		// approach 1:
-		// uri -> DBpediaResource
-		// word -> SurfaceFormOccurrence
-		// problem: In one sentence there can be multiple SFOs of the same word
-		// (if the word occurs multiple times)
-
-		// approach 2:
-		// graph db SurfaceForm(String id, String word)
-		// use with SurfaceForm(sfo.hashCode(), sfo.surfaceForm.name)
-		// for each SFO: go through DBpediaResource candidates
 		return unwrap(bestK);
 	}
 

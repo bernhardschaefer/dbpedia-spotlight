@@ -9,8 +9,7 @@ import de.unima.dws.dbpediagraph.graphdb.model.ModelFactory;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
 
 /**
- * Concrete factory as singleton for creating dbpedia related sense and surface
- * form instances.
+ * Concrete factory as singleton for creating DBpedia related sense and surface form instances.
  * 
  * @author Bernhard Schäfer
  * 
@@ -30,6 +29,7 @@ public enum DBpediaModelFactory implements ModelFactory<DBpediaSurfaceForm, DBpe
 
 	@Override
 	public DBpediaSurfaceForm newSurfaceForm(String name) {
+		// ok to throw exception since this is only relevant for testing
 		throw new UnsupportedOperationException();
 	}
 

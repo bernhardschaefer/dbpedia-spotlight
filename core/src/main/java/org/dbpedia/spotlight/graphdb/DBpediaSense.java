@@ -4,6 +4,12 @@ import org.dbpedia.spotlight.model.DBpediaResource;
 
 import de.unima.dws.dbpediagraph.graphdb.model.Sense;
 
+/**
+ * DBpedia {@link Sense} implementation which holds a {@link DBpediaResource} object.
+ * 
+ * @author Bernhard Schäfer
+ * 
+ */
 public class DBpediaSense implements Sense {
 
 	private final DBpediaResource resource;

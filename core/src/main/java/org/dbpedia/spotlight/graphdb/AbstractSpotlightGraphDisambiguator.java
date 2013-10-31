@@ -16,7 +16,7 @@ import org.dbpedia.spotlight.model.Text;
 
 /**
  * Abstract graph-based {@link Disambiguator} that throws {@link UnsupportedOperationException} for all methods not
- * relevant for collective graph-based disambiguation.
+ * applicable to collective graph-based disambiguation.
  * 
  * @author Bernhard Schäfer
  * 

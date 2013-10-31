@@ -5,11 +5,16 @@ import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
 
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
 
-//TODO javadoc
+/**
+ * DBpedia {@link SurfaceFormSenseScore} implementation.
+ * 
+ * @author Bernhard Schäfer
+ * 
+ */
 public class DBpediaSurfaceFormSenseScore implements SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> {
 	private final DBpediaSurfaceForm surfaceForm;
 	private final DBpediaSense sense;
-	private double score;
+	private final double score;
 
 	public DBpediaSurfaceFormSenseScore(DBpediaSurfaceForm dbpediaSurfaceForm, DBpediaSense sense, double score) {
 		this.surfaceForm = dbpediaSurfaceForm;
@@ -26,22 +31,17 @@ public class DBpediaSurfaceFormSenseScore implements SurfaceFormSenseScore<DBped
 
 	@Override
 	public int compareTo(SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> o) {
-		return Double.compare(getScore(), o.getScore());
+		return Double.compare(score(), o.score());
 	}
 
 	@Override
-	public double getScore() {
+	public double score() {
 		return score;
 	}
 
 	@Override
 	public DBpediaSense sense() {
 		return sense;
-	}
-
-	@Override
-	public void setScore(double score) {
-		this.score = score;
 	}
 
 	@Override
