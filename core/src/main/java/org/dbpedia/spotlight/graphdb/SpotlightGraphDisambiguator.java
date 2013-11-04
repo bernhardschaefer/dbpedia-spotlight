@@ -23,11 +23,10 @@ import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
 
 import com.tinkerpop.blueprints.Graph;
 
+import de.unima.dws.dbpediagraph.graphdb.GraphConfig;
 import de.unima.dws.dbpediagraph.graphdb.GraphFactory;
 import de.unima.dws.dbpediagraph.graphdb.GraphType;
 import de.unima.dws.dbpediagraph.graphdb.disambiguate.GraphDisambiguator;
-import de.unima.dws.dbpediagraph.graphdb.disambiguate.local.KPPCentrality;
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceForm;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
 import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstruction;
 import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionFactory;
@@ -42,50 +41,11 @@ import de.unima.dws.dbpediagraph.graphdb.util.CollectionUtils;
  */
 public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambiguator implements CollectiveDisambiguator {
 	private static final Log logger = LogFactory.getLog(SpotlightGraphDisambiguator.class);
-
-	private static final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> DEFAULT_DISAMBIGUATOR = new KPPCentrality<>(
-			GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE);
-
-	private static final Comparator<SurfaceFormOccurrence> offsetComparator = new Comparator<SurfaceFormOccurrence>() {
-		@Override
-		public int compare(SurfaceFormOccurrence o1, SurfaceFormOccurrence o2) {
-			return Integer.compare(o1.textOffset(), o2.textOffset());
-		}
-	};
-
-	public static List<DBpediaSense> convertToSenses(Collection<DBpediaResource> resources) {
-		List<DBpediaSense> senses = new ArrayList<>(resources.size());
-		for (DBpediaResource resource : resources)
-			senses.add(new DBpediaSense(resource));
-		return senses;
-	}
-
-	private static Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> unwrap(
-			Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK) {
-		// sort according to textOffset so that the spotlight demo
-		// (https://github.com/dbpedia-spotlight/demo) works
-		Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> resultMap = new TreeMap<>(offsetComparator);
-		for (Map.Entry<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> entry : bestK
-				.entrySet()) {
-			SurfaceFormOccurrence sFO = entry.getKey().getSurfaceFormOccurrence();
-			List<DBpediaResourceOccurrence> occs = new ArrayList<>();
-			for (SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> senseScore : entry.getValue()) {
-				DBpediaResource resource = senseScore.sense().getResource();
-				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
-						senseScore.score()));
-			}
-			resultMap.put(sFO, occs);
-		}
-		return resultMap;
-	}
+	private static final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> DEFAULT_DISAMBIGUATOR = GraphConfig
+			.newLocalDisambiguator(GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE);
 
 	private final SubgraphConstructionSettings subgraphConstructionSettings;
-
 	private final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator;
-
-	/**
-	 * The only relevant method is {@link CandidateSearcher#getCandidates(SurfaceForm)}
-	 */
 	private final CandidateSearcher searcher;
 
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
@@ -105,7 +65,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		logger.info("Using " + getClass().getSimpleName());
 
 		// get sense candidates
-		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = getSFOsCandidatesMap(occurrences);
+		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = getSurfaceFormCandidates(occurrences);
 
 		// create subgraph
 		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(
@@ -126,9 +86,17 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		return CollectionUtils.joinListValues(bestK);
 	}
 
-	private Map<DBpediaSurfaceForm, List<DBpediaSense>> getSFOsCandidatesMap(List<SurfaceFormOccurrence> sfOccs)
+	private static final Comparator<DBpediaResource> supportComparator = new Comparator<DBpediaResource>() {
+		@Override
+		public int compare(DBpediaResource o1, DBpediaResource o2) {
+			return Integer.compare(o1.support(), o2.support());
+		}
+	};
+
+	private Map<DBpediaSurfaceForm, List<DBpediaSense>> getSurfaceFormCandidates(List<SurfaceFormOccurrence> sfOccs)
 			throws SearchException {
 		long timeBefore = System.currentTimeMillis();
+
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> sFSenses = new HashMap<>(sfOccs.size());
 		for (SurfaceFormOccurrence sfOcc : sfOccs) {
 			Collection<DBpediaResource> resources = Collections.emptyList();
@@ -137,13 +105,50 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			} catch (ItemNotFoundException e) {
 				logger.warn("Error while trying to find candidates for " + sfOcc.surfaceForm().name(), e);
 			}
+			// if (resources.size() > k) // get the candidates with the highest support
+			// resources = CollectionUtils.bestK(resources, k, supportComparator);
 			sFSenses.put(new DBpediaSurfaceForm(sfOcc), convertToSenses(resources));
 		}
+
 		if (logger.isInfoEnabled()) {
 			long elapsedTime = System.currentTimeMillis() - timeBefore;
 			logger.info(new StringBuilder().append("Found ").append(CollectionUtils.joinListValues(sFSenses).size())
 					.append(" total sense candidates. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
 		}
+
 		return sFSenses;
+	}
+
+	private static final Comparator<SurfaceFormOccurrence> offsetComparator = new Comparator<SurfaceFormOccurrence>() {
+		@Override
+		public int compare(SurfaceFormOccurrence o1, SurfaceFormOccurrence o2) {
+			return Integer.compare(o1.textOffset(), o2.textOffset());
+		}
+	};
+
+	private static Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> unwrap(
+			Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK) {
+		// sort according to textOffset so that the spotlight demo
+		// (https://github.com/dbpedia-spotlight/demo) works
+		Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> resultMap = new TreeMap<>(offsetComparator);
+		for (Map.Entry<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> entry : bestK
+				.entrySet()) {
+			SurfaceFormOccurrence sFO = entry.getKey().getSurfaceFormOccurrence();
+			List<DBpediaResourceOccurrence> occs = new ArrayList<>();
+			for (SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> senseScore : entry.getValue()) {
+				DBpediaResource resource = senseScore.sense().getResource();
+				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
+						senseScore.score()));
+			}
+			resultMap.put(sFO, occs);
+		}
+		return resultMap;
+	}
+
+	private static List<DBpediaSense> convertToSenses(Collection<DBpediaResource> resources) {
+		List<DBpediaSense> senses = new ArrayList<>(resources.size());
+		for (DBpediaResource resource : resources)
+			senses.add(new DBpediaSense(resource));
+		return senses;
 	}
 }
