@@ -17,16 +17,19 @@ public class DBpediaSense implements Sense {
 
 	public DBpediaSense(DBpediaResource resource) {
 		this.resource = resource;
-		// Spotlight resources are Url encoded:
-		// Company_%28military_unit%29
-		// Napol%C3%A9on_%281955_film%29
+		// Spotlight resources are Url encoded, DBpedia dumps are partly encoded.
 
-		// DBpedia dumps are partly encoded:
-		// Napol%C3%A9on_(1955_film) [Napoléon_(1955_film)]
-		// Wolfgang_Graf_von_Bl%C3%BCcher [Wolfgang_Graf_von_Blücher]
+		// Spotlight --> DBpedia Dump
+
+		// Napol%C3%A9on_%281955_film%29 --> Napol%C3%A9on_(1955_film)
+		// Wolfgang_Graf_von_Bl%C3%BCcher --> Wolfgang_Graf_von_Blücher
+
+		// Other examples
+		// Sandra_Day_O%27Connor --> Sandra_Day_O'Connor
+		// Goal%21_(film) --> Goal!_(film)
 
 		// TODO think about proper transformation and get rid of ugly hack
-		fullUri = resource.getFullUri().replace("%28", "(").replace("%29", ")");
+		fullUri = resource.getFullUri().replace("%28", "(").replace("%29", ")").replace("%27", "'").replace("%21", "!");
 	}
 
 	@Override
