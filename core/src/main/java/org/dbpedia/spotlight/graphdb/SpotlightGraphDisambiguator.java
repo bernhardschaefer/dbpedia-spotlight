@@ -1,36 +1,20 @@
 package org.dbpedia.spotlight.graphdb;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dbpedia.spotlight.disambiguate.CollectiveDisambiguator;
 import org.dbpedia.spotlight.disambiguate.Disambiguator;
-import org.dbpedia.spotlight.exceptions.InputException;
-import org.dbpedia.spotlight.exceptions.ItemNotFoundException;
-import org.dbpedia.spotlight.exceptions.SearchException;
-import org.dbpedia.spotlight.model.CandidateSearcher;
-import org.dbpedia.spotlight.model.DBpediaResource;
-import org.dbpedia.spotlight.model.DBpediaResourceOccurrence;
-import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
+import org.dbpedia.spotlight.exceptions.*;
+import org.dbpedia.spotlight.model.*;
 
 import com.tinkerpop.blueprints.Graph;
 
-import de.unima.dws.dbpediagraph.graphdb.GraphConfig;
-import de.unima.dws.dbpediagraph.graphdb.GraphFactory;
-import de.unima.dws.dbpediagraph.graphdb.GraphType;
+import de.unima.dws.dbpediagraph.graphdb.*;
 import de.unima.dws.dbpediagraph.graphdb.disambiguate.GraphDisambiguator;
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
-import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstruction;
-import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionFactory;
-import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionSettings;
+import de.unima.dws.dbpediagraph.graphdb.subgraph.*;
 import de.unima.dws.dbpediagraph.graphdb.util.CollectionUtils;
 
 /**
@@ -126,6 +110,20 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		}
 	};
 
+	private static final Comparator<DBpediaResourceOccurrence> scoreComparator = new Comparator<DBpediaResourceOccurrence>() {
+		@Override
+		public int compare(DBpediaResourceOccurrence o1, DBpediaResourceOccurrence o2) {
+			return Double.compare(o1.similarityScore(), o2.similarityScore());
+		}
+	};
+
+	/**
+	 * Transform the results back to the DBpedia model. Sorts the {@link SurfaceFormOccurrence} based on their offset
+	 * and the {@link DBpediaResourceOccurrence} based on their similarityScore.
+	 * 
+	 * @param bestK
+	 *            the results from graphdb
+	 */
 	private static Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> unwrap(
 			Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK) {
 		// sort according to textOffset so that the spotlight demo
@@ -140,6 +138,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
 						senseScore.score()));
 			}
+			Collections.sort(occs, scoreComparator);
 			resultMap.put(sFO, occs);
 		}
 		return resultMap;
