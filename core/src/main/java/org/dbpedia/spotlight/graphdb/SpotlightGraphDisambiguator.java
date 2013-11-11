@@ -33,7 +33,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	private final CandidateSearcher searcher;
 
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(DEFAULT_DISAMBIGUATOR, SubgraphConstructionSettings.getDefault(), searcher);
+		this(DEFAULT_DISAMBIGUATOR, SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
 	}
 
 	public SpotlightGraphDisambiguator(GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator,
