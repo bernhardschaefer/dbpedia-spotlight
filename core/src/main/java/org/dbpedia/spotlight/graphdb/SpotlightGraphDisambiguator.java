@@ -25,15 +25,25 @@ import de.unima.dws.dbpediagraph.graphdb.util.CollectionUtils;
  */
 public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambiguator implements CollectiveDisambiguator {
 	private static final Log logger = LogFactory.getLog(SpotlightGraphDisambiguator.class);
-	private static final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> DEFAULT_DISAMBIGUATOR = GraphConfig
-			.newLocalDisambiguator(GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE);
+
+	/**
+	 * Configuration key for filtering candidate senses by minimum support.
+	 */
+	private static final String KEY_CANDIDATE_MIN_SUPPORT = "org.dbpedia.spotlight.graphdb.minSupport";
 
 	private final SubgraphConstructionSettings subgraphConstructionSettings;
 	private final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator;
 	private final CandidateSearcher searcher;
 
+	/**
+	 * Convenience constructor that retrieves the {@link GraphDisambiguator} and the
+	 * {@link SubgraphConstructionSettings} from the {@link GraphConfig} settings.
+	 * 
+	 * @param searcher
+	 */
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(DEFAULT_DISAMBIGUATOR, SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
+		this(GraphConfig.newLocalDisambiguator(GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE),
+				SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
 	}
 
 	public SpotlightGraphDisambiguator(GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator,
@@ -48,8 +58,11 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			int k) throws SearchException {
 		logger.info("Using " + getClass().getSimpleName());
 
-		// get sense candidates
-		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = getSurfaceFormCandidates(occurrences);
+		// get filtered sense candidates
+		Map<SurfaceFormOccurrence, Set<DBpediaResource>> sfResources = getSurfaceFormCandidates(occurrences, searcher);
+		int minSupport = GraphConfig.config().getInt(KEY_CANDIDATE_MIN_SUPPORT, 0);
+		filterResourcesBySupport(sfResources, minSupport);
+		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = DBpediaModelHelper.wrap(sfResources);
 
 		// create subgraph
 		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(
@@ -60,7 +73,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK = graphDisambiguator
 				.bestK(surfaceFormsSenses, subgraph, k);
 
-		return unwrap(bestK);
+		return DBpediaModelHelper.unwrap(bestK);
 	}
 
 	@Override
@@ -70,84 +83,49 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		return CollectionUtils.joinListValues(bestK);
 	}
 
-	private static final Comparator<DBpediaResource> supportComparator = new Comparator<DBpediaResource>() {
-		@Override
-		public int compare(DBpediaResource o1, DBpediaResource o2) {
-			return Integer.compare(o1.support(), o2.support());
+	/**
+	 * Removes all {@link DBpediaResource} from the map values with support < minSupport. If minSupport <= 0, the method
+	 * returns right away.
+	 */
+	private static void filterResourcesBySupport(Map<SurfaceFormOccurrence, Set<DBpediaResource>> surfaceFormsSenses,
+			final int minSupport) {
+		if (minSupport <= 0)
+			return;
+		int filtered = 0;
+		for (Set<DBpediaResource> resources : surfaceFormsSenses.values()) {
+			Iterator<DBpediaResource> iter = resources.iterator();
+			while (iter.hasNext()) {
+				DBpediaResource resource = iter.next();
+				if (resource.support() < minSupport) {
+					iter.remove();
+					filtered++;
+				}
+			}
 		}
-	};
+		logger.info("Filtered " + filtered + " resource candidates with support < " + minSupport);
+	}
 
-	private Map<DBpediaSurfaceForm, List<DBpediaSense>> getSurfaceFormCandidates(List<SurfaceFormOccurrence> sfOccs)
-			throws SearchException {
+	private static Map<SurfaceFormOccurrence, Set<DBpediaResource>> getSurfaceFormCandidates(
+			List<SurfaceFormOccurrence> sfOccs, CandidateSearcher searcher) throws SearchException {
 		long timeBefore = System.currentTimeMillis();
 
-		Map<DBpediaSurfaceForm, List<DBpediaSense>> sFSenses = new HashMap<>(sfOccs.size());
+		Map<SurfaceFormOccurrence, Set<DBpediaResource>> sfSenses = new HashMap<>(sfOccs.size());
+
 		for (SurfaceFormOccurrence sfOcc : sfOccs) {
-			Collection<DBpediaResource> resources = Collections.emptyList();
+			Set<DBpediaResource> resources = Collections.emptySet();
 			try {
 				resources = searcher.getCandidates(sfOcc.surfaceForm());
 			} catch (ItemNotFoundException e) {
 				logger.warn("Error while trying to find candidates for " + sfOcc.surfaceForm().name(), e);
 			}
-			// if (resources.size() > k) // get the candidates with the highest support
-			// resources = CollectionUtils.bestK(resources, k, supportComparator);
-			sFSenses.put(new DBpediaSurfaceForm(sfOcc), convertToSenses(resources));
+			sfSenses.put(sfOcc, resources);
 		}
-
 		if (logger.isInfoEnabled()) {
 			long elapsedTime = System.currentTimeMillis() - timeBefore;
-			logger.info(new StringBuilder().append("Found ").append(CollectionUtils.joinListValues(sFSenses).size())
-					.append(" total sense candidates. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
+			logger.info(new StringBuilder().append("Found ").append(CollectionUtils.countCollectionValues(sfSenses))
+					.append(" total resource candidates. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
 		}
-
-		return sFSenses;
+		return sfSenses;
 	}
 
-	private static final Comparator<SurfaceFormOccurrence> offsetComparator = new Comparator<SurfaceFormOccurrence>() {
-		@Override
-		public int compare(SurfaceFormOccurrence o1, SurfaceFormOccurrence o2) {
-			return Integer.compare(o1.textOffset(), o2.textOffset());
-		}
-	};
-
-	private static final Comparator<DBpediaResourceOccurrence> scoreComparator = new Comparator<DBpediaResourceOccurrence>() {
-		@Override
-		public int compare(DBpediaResourceOccurrence o1, DBpediaResourceOccurrence o2) {
-			return Double.compare(o1.similarityScore(), o2.similarityScore());
-		}
-	};
-
-	/**
-	 * Transform the results back to the DBpedia model. Sorts the {@link SurfaceFormOccurrence} based on their offset
-	 * and the {@link DBpediaResourceOccurrence} based on their similarityScore.
-	 * 
-	 * @param bestK
-	 *            the results from graphdb
-	 */
-	private static Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> unwrap(
-			Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK) {
-		// sort according to textOffset so that the spotlight demo
-		// (https://github.com/dbpedia-spotlight/demo) works
-		Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> resultMap = new TreeMap<>(offsetComparator);
-		for (Map.Entry<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> entry : bestK
-				.entrySet()) {
-			SurfaceFormOccurrence sFO = entry.getKey().getSurfaceFormOccurrence();
-			List<DBpediaResourceOccurrence> occs = new ArrayList<>();
-			for (SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> senseScore : entry.getValue()) {
-				DBpediaResource resource = senseScore.sense().getResource();
-				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
-						senseScore.score()));
-			}
-			Collections.sort(occs, scoreComparator);
-			resultMap.put(sFO, occs);
-		}
-		return resultMap;
-	}
-
-	private static List<DBpediaSense> convertToSenses(Collection<DBpediaResource> resources) {
-		List<DBpediaSense> senses = new ArrayList<>(resources.size());
-		for (DBpediaResource resource : resources)
-			senses.add(new DBpediaSense(resource));
-		return senses;
-	}
 }
