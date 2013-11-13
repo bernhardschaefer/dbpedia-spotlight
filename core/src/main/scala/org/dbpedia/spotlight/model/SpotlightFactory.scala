@@ -165,7 +165,7 @@ class SpotlightFactory(val configuration: SpotlightConfiguration) {
         } else if (policy == SpotlightConfiguration.DisambiguationPolicy.CuttingEdge) {
             disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new CuttingEdgeDisambiguator(contextSearcher)))
         } else if (policy == SpotlightConfiguration.DisambiguationPolicy.GraphBased) {
-            disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new GraphBasedDisambiguator(contextSearcher)))
+            disambiguators.getOrElse(policy, new ParagraphDisambiguatorJ(new GraphBasedDisambiguator(candidateSearcher)))
         } else { // by default use Occurrences
             disambiguators.getOrElse(SpotlightConfiguration.DisambiguationPolicy.Occurrences, new ParagraphDisambiguatorJ(new DefaultDisambiguator(contextSearcher)))
         }
