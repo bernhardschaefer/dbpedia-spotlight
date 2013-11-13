@@ -123,7 +123,8 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		if (logger.isInfoEnabled()) {
 			long elapsedTime = System.currentTimeMillis() - timeBefore;
 			logger.info(new StringBuilder().append("Found ").append(CollectionUtils.countCollectionValues(sfSenses))
-					.append(" total resource candidates. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
+					.append(" total resource candidates for ").append(sfOccs.size())
+					.append(" surface forms. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
 		}
 		return sfSenses;
 	}
