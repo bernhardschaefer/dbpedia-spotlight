@@ -326,7 +326,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>r07</version>
+                <version>15.0</version>
                 <!--
                   License: Apache Software License, Version 2.0
                 -->
