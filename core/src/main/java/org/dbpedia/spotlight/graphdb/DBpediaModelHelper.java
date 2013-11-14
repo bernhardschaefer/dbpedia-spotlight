@@ -38,9 +38,10 @@ public class DBpediaModelHelper {
 	}
 
 	public static Map<DBpediaSurfaceForm, List<DBpediaSense>> wrap(
-			Map<SurfaceFormOccurrence, Set<DBpediaResource>> surfaceFormsSenses) throws SearchException {
+			Map<SurfaceFormOccurrence, ? extends Collection<DBpediaResource>> surfaceFormsSenses)
+			throws SearchException {
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> sfSenses = new HashMap<>(surfaceFormsSenses.size());
-		for (Entry<SurfaceFormOccurrence, Set<DBpediaResource>> entry : surfaceFormsSenses.entrySet()) {
+		for (Entry<SurfaceFormOccurrence, ? extends Collection<DBpediaResource>> entry : surfaceFormsSenses.entrySet()) {
 			List<DBpediaSense> senses = convertToSenses(entry.getValue());
 			sfSenses.put(new DBpediaSurfaceForm(entry.getKey()), senses);
 		}
