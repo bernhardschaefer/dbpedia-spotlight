@@ -10,9 +10,7 @@ import org.dbpedia.spotlight.model._
 
 import com.tinkerpop.blueprints.Graph
 
-import de.unima.dws.dbpediagraph.graphdb.GraphConfig
-import de.unima.dws.dbpediagraph.graphdb.GraphFactory
-import de.unima.dws.dbpediagraph.graphdb.GraphType
+import de.unima.dws.dbpediagraph.graphdb._
 import de.unima.dws.dbpediagraph.graphdb.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionFactory
@@ -64,8 +62,6 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
     searcher: DBCandidateSearcher): Map[SurfaceFormOccurrence, List[Candidate]] = {
     val timeBefore = System.currentTimeMillis();
 
-    // step1: get candidates for all surface forms
-    var allCandidateResources = Set[DBpediaResource]()
     val occs = occurrences.foldLeft(
       Map[SurfaceFormOccurrence, List[Candidate]]())(
         (acc, sfOcc) => {
@@ -90,11 +86,12 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
             }
           }
 
-          allCandidateResources ++= candidateRes.map(_.resource)
-
           acc + (sfOcc -> candidateRes.toList)
         })
 
+    val elapsedMsec = System.currentTimeMillis() - timeBefore
+    SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time [sec]: %d",
+      occs.size, occs.values.foldLeft(0)((total, cs) => total + cs.size), (elapsedMsec / 1000.0))
     occs
   }
 

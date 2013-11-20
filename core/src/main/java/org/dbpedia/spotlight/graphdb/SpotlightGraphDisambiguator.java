@@ -31,11 +31,11 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	/**
 	 * Configuration key for filtering candidate senses by minimum support.
 	 */
-	private static final String KEY_CANDIDATE_MIN_SUPPORT = "org.dbpedia.spotlight.graphdb.filter.minSupport";
+	private static final String CONFIG_CANDIDATE_MIN_SUPPORT = "org.dbpedia.spotlight.graphdb.filter.minSupport";
 	/**
 	 * Configuration key for filtering the best k candidate senses by support.
 	 */
-	private static final String KEY_CANDIDATE_BEST_K_SUPPORT = "org.dbpedia.spotlight.graphdb.filter.bestkSupport";
+	private static final String CONFIG_CANDIDATE_BEST_K_SUPPORT = "org.dbpedia.spotlight.graphdb.filter.bestkSupport";
 
 	private final SubgraphConstructionSettings subgraphConstructionSettings;
 	private final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator;
@@ -68,9 +68,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 				searcher);
 
 		// filter by best k and threshold support
-		int minSupport = GraphConfig.config().getInt(KEY_CANDIDATE_MIN_SUPPORT, -1);
+		int minSupport = GraphConfig.config().getInt(CONFIG_CANDIDATE_MIN_SUPPORT, -1);
 		filterResourcesBySupport(sfResources, minSupport);
-		int bestkSupport = GraphConfig.config().getInt(KEY_CANDIDATE_BEST_K_SUPPORT, -1);
+		int bestkSupport = GraphConfig.config().getInt(CONFIG_CANDIDATE_BEST_K_SUPPORT, -1);
 		filterBestkResourcesBySupport(sfResources, bestkSupport);
 
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = DBpediaModelHelper.wrap(sfResources);
