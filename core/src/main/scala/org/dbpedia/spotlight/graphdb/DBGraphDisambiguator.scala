@@ -90,7 +90,7 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
         })
 
     val elapsedMsec = System.currentTimeMillis() - timeBefore
-    SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time [sec]: %d",
+    SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time [sec]: %.3f",
       occs.size, occs.values.foldLeft(0)((total, cs) => total + cs.size), (elapsedMsec / 1000.0))
     occs
   }
