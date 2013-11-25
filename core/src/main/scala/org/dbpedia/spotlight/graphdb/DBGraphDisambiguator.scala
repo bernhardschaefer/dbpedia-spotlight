@@ -1,20 +1,19 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
-
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
-
 import com.tinkerpop.blueprints.Graph
-
-import de.unima.dws.dbpediagraph.graphdb._
-import de.unima.dws.dbpediagraph.graphdb.disambiguate.GraphDisambiguator
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore
-import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionFactory
-import de.unima.dws.dbpediagraph.graphdb.subgraph.SubgraphConstructionSettings
+import de.unima.dws.dbpediagraph._
+import de.unima.dws.dbpediagraph.graph._
+import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
+import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
+import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionFactory
+import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionSettings
+import de.unima.dws.dbpediagraph.model.ModelTransformer
 
 class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense],
   val subgraphConstructionSettings: SubgraphConstructionSettings,
@@ -22,7 +21,7 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
   val surfaceFormStore: SurfaceFormStore) extends ParagraphDisambiguator {
 
   def this(candidateSearcher: DBCandidateSearcher,
-    surfaceFormStore: SurfaceFormStore) = this(GraphConfig.newLocalDisambiguator(GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE),
+    surfaceFormStore: SurfaceFormStore) = this(GraphConfig.newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
     SubgraphConstructionSettings.fromConfig(GraphConfig.config()),
     candidateSearcher, surfaceFormStore)
 
@@ -42,13 +41,15 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
     if (paragraph.occurrences.size == 0)
       return Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]]()
 
+    val graph = GraphFactory.getDBpediaGraph()
+
     val sfResources: Map[SurfaceFormOccurrence, List[Candidate]] = getOccurrencesCandidates(paragraph.occurrences, candidateSearcher)
 
     val surfaceFormsSenses = wrap(sfResources)
 
     // create subgraph
-    val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(GraphFactory.getDBpediaGraph(), subgraphConstructionSettings);
-    val subgraph: Graph = subgraphConstruction.createSubgraph(surfaceFormsSenses);
+    val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, subgraphConstructionSettings);
+    val subgraph = subgraphConstruction.createSubgraph(ModelTransformer.verticesFromSurfaceFormSenses(graph, surfaceFormsSenses))
 
     // disambiguate using subgraph
     val bestK = graphDisambiguator.bestK(surfaceFormsSenses, subgraph, k).asScala.mapValues(_.asScala.toList).toMap;

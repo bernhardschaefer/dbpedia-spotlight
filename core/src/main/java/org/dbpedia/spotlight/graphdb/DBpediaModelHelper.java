@@ -6,7 +6,7 @@ import java.util.Map.Entry;
 import org.dbpedia.spotlight.exceptions.SearchException;
 import org.dbpedia.spotlight.model.*;
 
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
+import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore;
 
 /**
  * Static helper class for transforming from DBpedia to Graph Model.

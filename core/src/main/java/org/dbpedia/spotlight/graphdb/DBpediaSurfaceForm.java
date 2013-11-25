@@ -2,7 +2,8 @@ package org.dbpedia.spotlight.graphdb;
 
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
 
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceForm;
+import de.unima.dws.dbpediagraph.model.DefaultSurfaceForm;
+import de.unima.dws.dbpediagraph.model.SurfaceForm;
 
 /**
  * DBpedia {@link SurfaceForm} implementation which holds a {@link SurfaceFormOccurrence} object.
@@ -10,25 +11,16 @@ import de.unima.dws.dbpediagraph.graphdb.model.SurfaceForm;
  * @author Bernhard Schäfer
  * 
  */
-public class DBpediaSurfaceForm implements SurfaceForm {
+public class DBpediaSurfaceForm extends DefaultSurfaceForm implements SurfaceForm {
 	private final SurfaceFormOccurrence surfaceFormOccurrence;
 
 	public DBpediaSurfaceForm(SurfaceFormOccurrence surfaceFormOccurrence) {
+		super(surfaceFormOccurrence.surfaceForm().name());
 		this.surfaceFormOccurrence = surfaceFormOccurrence;
 	}
 
 	public SurfaceFormOccurrence getSurfaceFormOccurrence() {
 		return surfaceFormOccurrence;
-	}
-
-	@Override
-	public String name() {
-		return getSurfaceFormOccurrence().surfaceForm().name();
-	}
-
-	@Override
-	public String toString() {
-		return name();
 	}
 
 }

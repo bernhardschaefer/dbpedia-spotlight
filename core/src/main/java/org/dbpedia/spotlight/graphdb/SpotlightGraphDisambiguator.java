@@ -13,11 +13,12 @@ import org.dbpedia.spotlight.model.*;
 import com.google.common.collect.Ordering;
 import com.tinkerpop.blueprints.Graph;
 
-import de.unima.dws.dbpediagraph.graphdb.*;
-import de.unima.dws.dbpediagraph.graphdb.disambiguate.GraphDisambiguator;
-import de.unima.dws.dbpediagraph.graphdb.model.SurfaceFormSenseScore;
-import de.unima.dws.dbpediagraph.graphdb.subgraph.*;
-import de.unima.dws.dbpediagraph.graphdb.util.CollectionUtils;
+import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator;
+import de.unima.dws.dbpediagraph.graph.*;
+import de.unima.dws.dbpediagraph.model.ModelTransformer;
+import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore;
+import de.unima.dws.dbpediagraph.subgraph.*;
+import de.unima.dws.dbpediagraph.util.CollectionUtils;
 
 /**
  * Graph based disambiguator compatible with the spotlight interface of {@link Disambiguator}.
@@ -48,7 +49,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	 * @param searcher
 	 */
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(GraphConfig.newLocalDisambiguator(GraphType.DIRECTED_GRAPH, DBpediaModelFactory.INSTANCE),
+		this(GraphConfig.<DBpediaSurfaceForm, DBpediaSense>newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
 				SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
 	}
 
@@ -63,7 +64,8 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	public Map<SurfaceFormOccurrence, List<DBpediaResourceOccurrence>> bestK(List<SurfaceFormOccurrence> occurrences,
 			int k) throws SearchException {
 		logger.info("Using " + getClass().getSimpleName());
-
+		Graph graph = GraphFactory.getDBpediaGraph();
+		
 		Map<SurfaceFormOccurrence, List<DBpediaResource>> sfResources = getSurfaceFormResourceCandidates(occurrences,
 				searcher);
 
@@ -77,8 +79,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 
 		// create subgraph
 		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(
-				GraphFactory.getDBpediaGraph(), subgraphConstructionSettings);
-		Graph subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses);
+				graph, subgraphConstructionSettings);
+		Graph subgraph = subgraphConstruction.createSubgraph(ModelTransformer.verticesFromSurfaceFormSenses(graph,
+				surfaceFormsSenses));
 
 		// disambiguate using subgraph
 		Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK = graphDisambiguator

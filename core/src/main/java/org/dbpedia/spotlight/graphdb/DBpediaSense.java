@@ -2,7 +2,8 @@ package org.dbpedia.spotlight.graphdb;
 
 import org.dbpedia.spotlight.model.DBpediaResource;
 
-import de.unima.dws.dbpediagraph.graphdb.model.Sense;
+import de.unima.dws.dbpediagraph.model.DefaultSense;
+import de.unima.dws.dbpediagraph.model.Sense;
 
 /**
  * DBpedia {@link Sense} implementation which holds a {@link DBpediaResource} object.
@@ -10,13 +11,11 @@ import de.unima.dws.dbpediagraph.graphdb.model.Sense;
  * @author Bernhard Schäfer
  * 
  */
-public class DBpediaSense implements Sense {
+public class DBpediaSense extends DefaultSense implements Sense {
 
 	private final DBpediaResource resource;
-	private final String fullUri;
 
 	public DBpediaSense(DBpediaResource resource) {
-		this.resource = resource;
 		// Spotlight resources are Url encoded, DBpedia dumps are partly encoded.
 
 		// Spotlight --> DBpedia Dump
@@ -29,20 +28,12 @@ public class DBpediaSense implements Sense {
 		// Goal%21_(film) --> Goal!_(film)
 
 		// TODO think about proper transformation and get rid of ugly hack
-		fullUri = resource.getFullUri().replace("%28", "(").replace("%29", ")").replace("%27", "'").replace("%21", "!");
-	}
-
-	@Override
-	public String fullUri() {
-		return fullUri;
+		super(resource.getFullUri().replace("%28", "(").replace("%29", ")").replace("%27", "'").replace("%21", "!"));
+		this.resource = resource;
 	}
 
 	public DBpediaResource getResource() {
 		return resource;
 	}
 
-	@Override
-	public String toString() {
-		return fullUri();
-	}
 }
