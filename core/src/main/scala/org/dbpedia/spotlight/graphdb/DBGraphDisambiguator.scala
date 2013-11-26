@@ -1,19 +1,19 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
+
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
-import com.tinkerpop.blueprints.Graph
+
 import de.unima.dws.dbpediagraph._
-import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
+import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionFactory
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionSettings
-import de.unima.dws.dbpediagraph.model.ModelTransformer
 
 class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense],
   val subgraphConstructionSettings: SubgraphConstructionSettings,
@@ -49,7 +49,7 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
 
     // create subgraph
     val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, subgraphConstructionSettings);
-    val subgraph = subgraphConstruction.createSubgraph(ModelTransformer.verticesFromSurfaceFormSenses(graph, surfaceFormsSenses))
+    val subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses)
 
     // disambiguate using subgraph
     val bestK = graphDisambiguator.bestK(surfaceFormsSenses, subgraph, k).asScala.mapValues(_.asScala.toList).toMap;

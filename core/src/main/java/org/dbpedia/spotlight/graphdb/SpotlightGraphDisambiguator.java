@@ -15,7 +15,6 @@ import com.tinkerpop.blueprints.Graph;
 
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator;
 import de.unima.dws.dbpediagraph.graph.*;
-import de.unima.dws.dbpediagraph.model.ModelTransformer;
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore;
 import de.unima.dws.dbpediagraph.subgraph.*;
 import de.unima.dws.dbpediagraph.util.CollectionUtils;
@@ -49,7 +48,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	 * @param searcher
 	 */
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(GraphConfig.<DBpediaSurfaceForm, DBpediaSense>newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
+		this(GraphConfig.<DBpediaSurfaceForm, DBpediaSense> newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
 				SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
 	}
 
@@ -65,7 +64,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			int k) throws SearchException {
 		logger.info("Using " + getClass().getSimpleName());
 		Graph graph = GraphFactory.getDBpediaGraph();
-		
+
 		Map<SurfaceFormOccurrence, List<DBpediaResource>> sfResources = getSurfaceFormResourceCandidates(occurrences,
 				searcher);
 
@@ -78,10 +77,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = DBpediaModelHelper.wrap(sfResources);
 
 		// create subgraph
-		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(
-				graph, subgraphConstructionSettings);
-		Graph subgraph = subgraphConstruction.createSubgraph(ModelTransformer.verticesFromSurfaceFormSenses(graph,
-				surfaceFormsSenses));
+		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph,
+				subgraphConstructionSettings);
+		Graph subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses);
 
 		// disambiguate using subgraph
 		Map<DBpediaSurfaceForm, List<SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense>>> bestK = graphDisambiguator
