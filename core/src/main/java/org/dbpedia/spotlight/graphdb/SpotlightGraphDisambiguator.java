@@ -3,6 +3,7 @@ package org.dbpedia.spotlight.graphdb;
 import java.util.*;
 import java.util.Map.Entry;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dbpedia.spotlight.disambiguate.CollectiveDisambiguator;
@@ -14,10 +15,12 @@ import com.google.common.collect.Ordering;
 import com.tinkerpop.blueprints.Graph;
 
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator;
+import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory;
 import de.unima.dws.dbpediagraph.graph.*;
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore;
 import de.unima.dws.dbpediagraph.subgraph.*;
 import de.unima.dws.dbpediagraph.util.CollectionUtils;
+import de.unima.dws.dbpediagraph.weights.EdgeWeightsFactory;
 
 /**
  * Graph based disambiguator compatible with the spotlight interface of {@link Disambiguator}.
@@ -41,6 +44,8 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	private final GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator;
 	private final CandidateSearcher searcher;
 
+	private static final Configuration config = GraphConfig.config();
+
 	/**
 	 * Convenience constructor that retrieves the {@link GraphDisambiguator} and the
 	 * {@link SubgraphConstructionSettings} from the {@link GraphConfig} settings.
@@ -48,8 +53,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	 * @param searcher
 	 */
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(GraphConfig.<DBpediaSurfaceForm, DBpediaSense> newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
-				SubgraphConstructionSettings.fromConfig(GraphConfig.config()), searcher);
+		this(GraphDisambiguatorFactory.<DBpediaSurfaceForm, DBpediaSense> newLocalFromConfig(config,
+				GraphType.DIRECTED_GRAPH, EdgeWeightsFactory.dbpediaFromConfig(config)), SubgraphConstructionSettings
+				.fromConfig(config), searcher);
 	}
 
 	public SpotlightGraphDisambiguator(GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator,

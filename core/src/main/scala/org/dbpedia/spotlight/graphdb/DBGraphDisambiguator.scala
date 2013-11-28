@@ -1,29 +1,29 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
-
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
-
 import de.unima.dws.dbpediagraph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionFactory
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionSettings
+import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
+import de.unima.dws.dbpediagraph.weights.EdgeWeightsFactory
 
 class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense],
   val subgraphConstructionSettings: SubgraphConstructionSettings,
   val candidateSearcher: DBCandidateSearcher,
   val surfaceFormStore: SurfaceFormStore) extends ParagraphDisambiguator {
 
-  def this(candidateSearcher: DBCandidateSearcher,
-    surfaceFormStore: SurfaceFormStore) = this(GraphConfig.newLocalDisambiguator(GraphType.DIRECTED_GRAPH),
-    SubgraphConstructionSettings.fromConfig(GraphConfig.config()),
-    candidateSearcher, surfaceFormStore)
+  def this(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore) = 
+      this(GraphDisambiguatorFactory.newLocalFromConfig(GraphConfig.config(),GraphType.DIRECTED_GRAPH, EdgeWeightsFactory.dbpediaFromConfig(GraphConfig.config())), 
+           SubgraphConstructionSettings.fromConfig(GraphConfig.config()), 
+           candidateSearcher, surfaceFormStore)
 
   def disambiguate(paragraph: Paragraph): List[DBpediaResourceOccurrence] = {
     // return first from each candidate set
