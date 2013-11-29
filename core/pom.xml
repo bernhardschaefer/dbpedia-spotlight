@@ -83,6 +83,10 @@
                     <groupId>xerces</groupId>
                     <artifactId>xerces</artifactId>
                 </exclusion>
+                 <exclusion>
+                   	<groupId>berkeleydb</groupId>
+                   	<artifactId>berkeleydb</artifactId>
+                 </exclusion>
             </exclusions>
         </dependency>
 

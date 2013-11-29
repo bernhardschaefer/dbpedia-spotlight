@@ -350,6 +350,10 @@
                         <groupId>xerces</groupId>
                         <artifactId>xerces</artifactId>
                     </exclusion>
+                    <exclusion>
+                    	<groupId>berkeleydb</groupId>
+                    	<artifactId>berkeleydb</artifactId>
+                    </exclusion>
                 </exclusions>
                 <!--
                   License: Apache Software License, Version 2.0
