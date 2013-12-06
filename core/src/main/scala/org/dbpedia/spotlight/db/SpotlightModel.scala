@@ -113,7 +113,7 @@ object SpotlightModel {
       new GenerativeContextSimilarity(tokenTypeStore)
     ))
     
-    val graphDisambiguator = new ParagraphDisambiguatorJ(new DBGraphDisambiguator(searcher, sfStore))
+    val graphDisambiguator = new ParagraphDisambiguatorJ(DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore))
 
     //If there is at least one NE model or a chunker, use the OpenNLP spotter:
     val spotter = if( new File(modelFolder, "opennlp").exists() && new File(modelFolder, "opennlp").list().exists(f => f.startsWith("ner-") || f.startsWith("chunker")) ) {
