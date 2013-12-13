@@ -9,6 +9,8 @@ import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
 
+import com.google.common.base.Stopwatch
+
 import de.unima.dws.dbpediagraph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
@@ -59,7 +61,7 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
 
   def getOccurrencesCandidates(occurrences: List[SurfaceFormOccurrence],
     searcher: DBCandidateSearcher): Map[SurfaceFormOccurrence, List[Candidate]] = {
-    val timeBefore = System.currentTimeMillis();
+    val timer = Stopwatch.createStarted();
 
     val occs = occurrences.foldLeft(
       Map[SurfaceFormOccurrence, List[Candidate]]())(
@@ -88,9 +90,8 @@ class DBGraphDisambiguator(val graphDisambiguator: GraphDisambiguator[DBpediaSur
           acc + (sfOcc -> candidateRes.toList)
         })
 
-    val elapsedMsec = System.currentTimeMillis() - timeBefore
-    SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time [sec]: %.3f",
-      occs.size, occs.values.foldLeft(0)((total, cs) => total + cs.size), (elapsedMsec / 1000.0))
+    SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time: %s",
+      occs.values.foldLeft(0)((total, cs) => total + cs.size), occs.size, timer)
     occs
   }
 

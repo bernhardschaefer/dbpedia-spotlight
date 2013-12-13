@@ -11,6 +11,7 @@ import org.dbpedia.spotlight.disambiguate.Disambiguator;
 import org.dbpedia.spotlight.exceptions.*;
 import org.dbpedia.spotlight.model.*;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Ordering;
 import com.tinkerpop.blueprints.Graph;
 
@@ -158,7 +159,7 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 
 	private static Map<SurfaceFormOccurrence, List<DBpediaResource>> getSurfaceFormResourceCandidates(
 			List<SurfaceFormOccurrence> sfOccs, CandidateSearcher searcher) throws SearchException {
-		long timeBefore = System.currentTimeMillis();
+		Stopwatch timer = Stopwatch.createStarted();
 
 		Map<SurfaceFormOccurrence, List<DBpediaResource>> sfSenses = new HashMap<>(sfOccs.size());
 
@@ -172,10 +173,9 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 			sfSenses.put(sfOcc, resources);
 		}
 		if (logger.isInfoEnabled()) {
-			long elapsedTime = System.currentTimeMillis() - timeBefore;
 			logger.info(new StringBuilder().append("Found ").append(CollectionUtils.countCollectionValues(sfSenses))
 					.append(" total resource candidates for ").append(sfOccs.size())
-					.append(" surface forms. Elapsed time [sec]: ").append(elapsedTime / 1000.0).toString());
+					.append(" surface forms. Elapsed time: ").append(timer).toString());
 		}
 		return sfSenses;
 	}
