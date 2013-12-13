@@ -22,12 +22,14 @@ usage ()
 
 
 opennlp="None"
-eval=""
+eval="false"
+data_only="false"
 
-while getopts "eo:" opt; do
+while getopts "edo:" opt; do
   case $opt in
     o) opennlp="$OPTARG";;
     e) eval="true";;
+    d) data_only="true"
   esac
 done
 
@@ -87,20 +89,25 @@ curl -# http://downloads.dbpedia.org/current/$LANGUAGE/disambiguations_$LANGUAGE
 curl -# http://downloads.dbpedia.org/current/$LANGUAGE/instance_types_$LANGUAGE.nt.bz2 | bzcat > instance_types.nt
 
 
-#Set up Spotlight:
-cd $BASE_WDIR
 
-if [ -d dbpedia-spotlight ]; then
-    echo "Updating DBpedia Spotlight..."
-    cd dbpedia-spotlight
-    git reset --hard HEAD
-    git pull
-    mvn -T 1C -q clean install
-else
-    echo "Setting up DBpedia Spotlight..."
-    git clone --depth 1 https://github.com/dbpedia-spotlight/dbpedia-spotlight.git
-    cd dbpedia-spotlight
-    mvn -T 1C -q clean install
+if [ "$DATA_ONLY" != "true" ]; then
+
+  #Set up Spotlight:
+  cd $BASE_WDIR
+  
+  if [ -d dbpedia-spotlight ]; then
+      echo "Updating DBpedia Spotlight..."
+      cd dbpedia-spotlight
+      git reset --hard HEAD
+      git pull
+      mvn -T 1C -q clean install
+  else
+      echo "Setting up DBpedia Spotlight..."
+      git clone --depth 1 https://github.com/dbpedia-spotlight/dbpedia-spotlight.git
+      cd dbpedia-spotlight
+      mvn -T 1C -q clean install
+  fi
+
 fi
 
 cd $BASE_DIR
@@ -139,14 +146,17 @@ echo "Moving stopwords into HDFS..."
 cd $BASE_DIR
 hadoop fs -put $3 stopwords.$LANGUAGE.list
 
-if [ -e "$opennlp/$LANGUAGE-token.bin" ]; then
-    hadoop fs -put "$opennlp/$LANGUAGE-token.bin" "$LANGUAGE.tokenizer_model"
-else
-    touch empty;
-    hadoop fs -put empty "$LANGUAGE.tokenizer_model";
-    rm empty;
-fi
+touch empty;
+hadoop fs -put empty "$LANGUAGE.tokenizer_model";
+rm empty;
 
+#if [ -e "$opennlp/$LANGUAGE-token.bin" ]; then
+#    hadoop fs -put "$opennlp/$LANGUAGE-token.bin" "$LANGUAGE.tokenizer_model"
+#else
+#    touch empty;
+#    hadoop fs -put empty "$LANGUAGE.tokenizer_model";
+#    rm empty;
+#fi
 
 #Adapt pig params:
 cd $BASE_DIR
@@ -185,13 +195,17 @@ hadoop fs -cat $LANGUAGE/names_and_entities/sfAndTotalCounts/part* > sfAndTotalC
 #Create the model:
 cd $BASE_DIR
 cd $1/dbpedia-spotlight
-mvn -q clean
-mvn -q install
 
-mvn -pl index exec:java -Dexec.mainClass=org.dbpedia.spotlight.db.CreateSpotlightModel -Dexec.args="$2 $WDIR $TARGET_DIR $opennlp $STOPWORDS $4Stemmer";
+CREATE_MODEL="mvn -pl index exec:java -Dexec.mainClass=org.dbpedia.spotlight.db.CreateSpotlightModel -Dexec.args=\"$2 $WDIR $TARGET_DIR $opennlp $STOPWORDS $4Stemmer\";"
 
-if [ "$eval" == "true" ]; then
-    mvn -pl eval exec:java -Dexec.mainClass=org.dbpedia.spotlight.evaluation.EvaluateSpotlightModel -Dexec.args="$TARGET_DIR $WDIR/heldout.txt" > $TARGET_DIR/evaluation.txt
+if [ "$DATA_ONLY" == "true" ]; then
+    echo "$CREATE_MODEL" >> create_models.job.sh
+else
+  eval "$CREATE_MODEL"
+  
+  if [ "$eval" == "true" ]; then
+      mvn -pl eval exec:java -Dexec.mainClass=org.dbpedia.spotlight.evaluation.EvaluateSpotlightModel -Dexec.args="$TARGET_DIR $WDIR/heldout.txt" > $TARGET_DIR/evaluation.txt
+  fi
 fi
 
 echo "Finished!"
