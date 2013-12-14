@@ -2,7 +2,6 @@ package org.dbpedia.spotlight.graphdb;
 
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence;
 
-import de.unima.dws.dbpediagraph.model.DefaultSurfaceForm;
 import de.unima.dws.dbpediagraph.model.SurfaceForm;
 
 /**
@@ -11,11 +10,10 @@ import de.unima.dws.dbpediagraph.model.SurfaceForm;
  * @author Bernhard Schäfer
  * 
  */
-public class DBpediaSurfaceForm extends DefaultSurfaceForm implements SurfaceForm {
+public class DBpediaSurfaceForm implements SurfaceForm {
 	private final SurfaceFormOccurrence surfaceFormOccurrence;
 
 	public DBpediaSurfaceForm(SurfaceFormOccurrence surfaceFormOccurrence) {
-		super(surfaceFormOccurrence.surfaceForm().name());
 		this.surfaceFormOccurrence = surfaceFormOccurrence;
 	}
 
@@ -23,4 +21,20 @@ public class DBpediaSurfaceForm extends DefaultSurfaceForm implements SurfaceFor
 		return surfaceFormOccurrence;
 	}
 
+	@Override
+	public String name() {
+		return surfaceFormOccurrence.surfaceForm().name();
+	}
+
+	// we cannot use DefaultSurfaceForm hashCode() and equals() since offset is important
+
+	@Override
+	public int hashCode() {
+		return surfaceFormOccurrence.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return surfaceFormOccurrence.equals(obj);
+	}
 }
