@@ -1,5 +1,6 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
+
 import org.apache.commons.configuration.Configuration
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
@@ -7,7 +8,10 @@ import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
+
 import com.google.common.base.Stopwatch
+import com.tinkerpop.blueprints.Graph
+
 import de.unima.dws.dbpediagraph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
@@ -15,16 +19,12 @@ import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionFactory
 import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionSettings
-import de.unima.dws.dbpediagraph.weights.EdgeWeights
 import de.unima.dws.dbpediagraph.weights.EdgeWeightsFactory
-import com.tinkerpop.blueprints.Graph
 
 class DBGraphDisambiguator(
   val candidateSearcher: DBCandidateSearcher,
   val surfaceFormStore: SurfaceFormStore,
-  val config: Configuration,
-  val edgeWeights: EdgeWeights //TODO make this customizable
-  ) extends ParagraphDisambiguator {
+  val config: Configuration) extends ParagraphDisambiguator {
 
   def disambiguate(paragraph: Paragraph): List[DBpediaResourceOccurrence] = {
     // return first from each candidate set
@@ -36,14 +36,15 @@ class DBGraphDisambiguator(
   }
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
-    val graphType = GraphType.DIRECTED_GRAPH //TODO make this customizable
     val settings = SubgraphConstructionSettings.fromConfig(config)
+    val edgeWeights = EdgeWeightsFactory.dbpediaFromConfig(config)
+    val graphType = GraphType.DIRECTED_GRAPH //TODO make this customizable
     val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newLocalFromConfig(config, graphType, edgeWeights)
     val graph = GraphFactory.getDBpediaGraph()
-    bestK_(paragraph, k, graph, graphType, settings, graphDisambiguator)
+    bestK_(paragraph, k, graph, settings, graphDisambiguator)
   }
 
-  def bestK_(paragraph: Paragraph, k: Int, graph: Graph, graphType: GraphType, settings: SubgraphConstructionSettings, graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
+  def bestK_(paragraph: Paragraph, k: Int, graph: Graph, settings: SubgraphConstructionSettings, graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     SpotlightLog.debug(this.getClass, "Running bestK for paragraph %s.", paragraph.id)
 
     if (paragraph.occurrences.size == 0)
@@ -118,8 +119,7 @@ class DBGraphDisambiguator(
 
 object DBGraphDisambiguator {
   def fromConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore, config: Configuration): DBGraphDisambiguator = {
-    val edgeWeights = EdgeWeightsFactory.dbpediaFromConfig(config)
-    new DBGraphDisambiguator(candidateSearcher, surfaceFormStore, config, edgeWeights)
+    new DBGraphDisambiguator(candidateSearcher, surfaceFormStore, config)
   }
 
   def fromDefaultConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore): DBGraphDisambiguator = {
