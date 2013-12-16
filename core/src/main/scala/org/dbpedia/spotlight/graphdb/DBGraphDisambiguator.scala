@@ -37,9 +37,7 @@ class DBGraphDisambiguator(
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     val settings = SubgraphConstructionSettings.fromConfig(config)
-    val edgeWeights = EdgeWeightsFactory.dbpediaFromConfig(config)
-    val graphType = GraphType.DIRECTED_GRAPH //TODO make this customizable
-    val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newLocalFromConfig(config, graphType, edgeWeights)
+    val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newFromConfig(config)
     val graph = GraphFactory.getDBpediaGraph()
     bestK_(paragraph, k, graph, settings, graphDisambiguator)
   }
