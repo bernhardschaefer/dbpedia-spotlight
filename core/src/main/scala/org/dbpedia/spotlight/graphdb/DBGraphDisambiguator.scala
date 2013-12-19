@@ -35,10 +35,10 @@ class DBGraphDisambiguator(
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     //TODO cache all objects if config has not changed
+    val graph = GraphFactory.getDBpediaGraph()
     val settings = SubgraphConstructionSettings.fromConfig(config)
     val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, settings)
     val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newFromConfig(config)
-    val graph = GraphFactory.getDBpediaGraph()
     bestK_(paragraph, k, graph, subgraphConstruction, graphDisambiguator)
   }
 
