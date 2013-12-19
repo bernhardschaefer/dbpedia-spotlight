@@ -37,4 +37,10 @@ public class DBpediaSurfaceForm implements SurfaceForm {
 	public boolean equals(Object obj) {
 		return surfaceFormOccurrence.equals(obj);
 	}
+
+	@Override
+	public String toString() {
+		return surfaceFormOccurrence.surfaceForm().toString();
+	}
+	
 }
