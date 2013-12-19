@@ -17,11 +17,11 @@ import com.tinkerpop.blueprints.Graph;
 
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator;
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory;
-import de.unima.dws.dbpediagraph.graph.*;
+import de.unima.dws.dbpediagraph.graph.GraphConfig;
+import de.unima.dws.dbpediagraph.graph.GraphFactory;
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore;
 import de.unima.dws.dbpediagraph.subgraph.*;
 import de.unima.dws.dbpediagraph.util.CollectionUtils;
-import de.unima.dws.dbpediagraph.weights.EdgeWeightsFactory;
 
 /**
  * Graph based disambiguator compatible with the spotlight interface of {@link Disambiguator}.
@@ -54,9 +54,8 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 	 * @param searcher
 	 */
 	public SpotlightGraphDisambiguator(CandidateSearcher searcher) {
-		this(GraphDisambiguatorFactory.<DBpediaSurfaceForm, DBpediaSense> newLocalFromConfig(config,
-				GraphType.DIRECTED_GRAPH, EdgeWeightsFactory.dbpediaFromConfig(config)), SubgraphConstructionSettings
-				.fromConfig(config), searcher);
+		this(GraphDisambiguatorFactory.<DBpediaSurfaceForm, DBpediaSense> newFromConfig(config),
+				SubgraphConstructionSettings.fromConfig(config), searcher);
 	}
 
 	public SpotlightGraphDisambiguator(GraphDisambiguator<DBpediaSurfaceForm, DBpediaSense> graphDisambiguator,

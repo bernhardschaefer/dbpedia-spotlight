@@ -65,9 +65,9 @@ public class DBpediaModelHelper {
 			SurfaceFormOccurrence sFO = entry.getKey().getSurfaceFormOccurrence();
 			List<DBpediaResourceOccurrence> occs = new ArrayList<>();
 			for (SurfaceFormSenseScore<DBpediaSurfaceForm, DBpediaSense> senseScore : entry.getValue()) {
-				DBpediaResource resource = senseScore.sense().getResource();
+				DBpediaResource resource = senseScore.getSense().getResource();
 				occs.add(new DBpediaResourceOccurrence(resource, sFO.surfaceForm(), sFO.context(), sFO.textOffset(),
-						senseScore.score()));
+						senseScore.getScore()));
 			}
 			Collections.sort(occs, scoreComparator);
 			resultMap.put(sFO, occs);
