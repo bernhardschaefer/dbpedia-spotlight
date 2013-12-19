@@ -17,9 +17,7 @@ import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
 import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
-import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionFactory
-import de.unima.dws.dbpediagraph.subgraph.SubgraphConstructionSettings
-import de.unima.dws.dbpediagraph.weights.EdgeWeightsFactory
+import de.unima.dws.dbpediagraph.subgraph._
 
 class DBGraphDisambiguator(
   val candidateSearcher: DBCandidateSearcher,
@@ -36,13 +34,15 @@ class DBGraphDisambiguator(
   }
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
+    //TODO cache all objects if config has not changed
     val settings = SubgraphConstructionSettings.fromConfig(config)
+    val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, settings)
     val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newFromConfig(config)
     val graph = GraphFactory.getDBpediaGraph()
-    bestK_(paragraph, k, graph, settings, graphDisambiguator)
+    bestK_(paragraph, k, graph, subgraphConstruction, graphDisambiguator)
   }
 
-  def bestK_(paragraph: Paragraph, k: Int, graph: Graph, settings: SubgraphConstructionSettings, graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
+  def bestK_(paragraph: Paragraph, k: Int, graph: Graph, subgraphConstruction: SubgraphConstruction, graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     SpotlightLog.debug(this.getClass, "Running bestK for paragraph %s.", paragraph.id)
 
     if (paragraph.occurrences.size == 0)
@@ -52,7 +52,6 @@ class DBGraphDisambiguator(
     val surfaceFormsSenses = wrap(sfResources)
 
     // create subgraph
-    val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, settings);
     val subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses)
 
     // disambiguate using subgraph
@@ -105,11 +104,11 @@ class DBGraphDisambiguator(
 
   def unwrap(bestK: Map[DBpediaSurfaceForm, List[SurfaceFormSenseScore[DBpediaSurfaceForm, DBpediaSense]]]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     bestK.map(kv => (kv._1.getSurfaceFormOccurrence(),
-      kv._2.map(s => new DBpediaResourceOccurrence(s.sense().getResource(),
-        s.surfaceForm().getSurfaceFormOccurrence().surfaceForm,
-        s.surfaceForm().getSurfaceFormOccurrence().context,
-        s.surfaceForm().getSurfaceFormOccurrence().textOffset,
-        s.score()))))
+      kv._2.map(s => new DBpediaResourceOccurrence(s.getSense().getResource(),
+        s.getSurfaceForm().getSurfaceFormOccurrence().surfaceForm,
+        s.getSurfaceForm().getSurfaceFormOccurrence().context,
+        s.getSurfaceForm().getSurfaceFormOccurrence().textOffset,
+        s.getScore()))))
   }
 
   def name = "Database-backed Graph-based 2 Step disambiguator"

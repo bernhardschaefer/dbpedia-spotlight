@@ -18,7 +18,7 @@ public class DBpediaSense extends DefaultSense implements Sense {
 
 	public DBpediaSense(DBpediaResource resource) {
 		// Spotlight resources are URL encoded and need to be decoded
-		super(UriTransformer.decode(resource.getFullUri()));
+		super(UriTransformer.decode(resource.getFullUri()), resource.prior());
 		this.resource = resource;
 	}
 
