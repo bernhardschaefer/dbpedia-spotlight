@@ -56,7 +56,19 @@ class DBGraphDisambiguator(
 
     // disambiguate using subgraph
     val bestK = graphDisambiguator.bestK(surfaceFormsSenses, subgraph, k).asScala.mapValues(_.asScala.toList).toMap;
-    unwrap(bestK)
+    
+    val sfOccs = unwrap(bestK)
+
+    // set confidence as percentageOfSecondRank
+    sfOccs.foreach{case(sf, candOccs) =>
+	    (1 to candOccs.size-1).foreach{ i: Int =>
+	        val top = candOccs(i-1)
+	        val bottom = candOccs(i)
+	        top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
+	    }
+    }
+    
+    sfOccs
   }
 
   //maximum number of considered candidates
