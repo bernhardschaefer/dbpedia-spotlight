@@ -99,7 +99,8 @@ class DBGraphDisambiguator(
   }
 
   def wrap(sfResources: Map[SurfaceFormOccurrence, List[Candidate]]): java.util.Map[DBpediaSurfaceForm, java.util.List[DBpediaSense]] = {
-    sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c.resource)).asJava)).asJava
+	// sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c.resource)).asJava)).asJava
+    sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c)).asJava)).asJava
   }
 
   def unwrap(bestK: Map[DBpediaSurfaceForm, List[SurfaceFormSenseScore[DBpediaSurfaceForm, DBpediaSense]]]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
