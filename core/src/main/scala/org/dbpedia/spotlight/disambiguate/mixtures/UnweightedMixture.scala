@@ -33,9 +33,8 @@ class UnweightedMixture(features: Set[String]) extends Mixture(1) {
     }
     
     //TODO remove verboose score logging again
-    SpotlightLog.debug(this.getClass, "sf: %s, res: %s, sim: %.3f, P(s|e): %.3f, P(c|e): %.3f, P(e): %.3f", 
-    		occurrence.textOffset + ":" + occurrence.surfaceForm.name, occurrence.resource.uri, occurrence.similarityScore, 
-            p_se, p_ce, p_e)
+    SpotlightLog.debug(this.getClass, "%s --> %s [sim: %.3f, P(s|e): %.3f, P(c|e): %.3f, P(e): %.3f]", 
+    		occurrence.textOffset + ":" + occurrence.surfaceForm.name, occurrence.resource.uri, score, p_se, p_ce, p_e)
         
     score
   }
