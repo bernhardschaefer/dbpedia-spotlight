@@ -17,18 +17,25 @@ class UnweightedMixture(features: Set[String]) extends Mixture(1) {
     val score = fs.foldLeft(0.0)((x: Double, y: Double) => if(x == -inf || y == -inf) -inf else x + y)
     
     // Set("P(e)", "P(c|e)", "P(s|e)")
-  
-    var scoreMap: Map[String, Double] = Map()
-    
-    for ((score, count) <- fs.zipWithIndex) {
-    
+    val p_se = occurrence.featureValue("P(s|e)") match { 
+      case Some(p) => p.asInstanceOf[Double]
+      case None => 0.0
     }
     
-      //TODO remove verboose score logging again
+    val p_e = occurrence.featureValue("P(e)") match { 
+      case Some(p) => p.asInstanceOf[Double]
+      case None => 0.0
+    }
+    
+    val p_ce = occurrence.featureValue("P(c|e)") match { 
+      case Some(p) => p.asInstanceOf[Double]
+      case None => 0.0
+    }
+    
+    //TODO remove verboose score logging again
     SpotlightLog.debug(this.getClass, "sf: %s, res: %s, sim: %.3f, P(s|e): %.3f, P(c|e): %.3f, P(e): %.3f", 
     		occurrence.textOffset + ":" + occurrence.surfaceForm.name, occurrence.resource.uri, occurrence.similarityScore, 
-            occurrence.featureValue("P(s|e)").asInstanceOf[Double], occurrence.featureValue("P(c|e)").asInstanceOf[Double], 
-            occurrence.featureValue("P(e)").asInstanceOf[Double])
+            p_se, p_ce, p_e)
         
     score
   }
