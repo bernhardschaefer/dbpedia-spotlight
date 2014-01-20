@@ -217,11 +217,6 @@ class DBTwoStepDisambiguator(
         //Use the mixture to combine the scores
         resOcc.setSimilarityScore(mixture.getScore(resOcc))
 
-        //TODO remove verboose score logging again
-        SpotlightLog.debug(this.getClass, "sf: %s, res: %s, sim: %s, P(s|e): %s, P(c|e): %s, P(e): %s", 
-            aSfOcc.textOffset + ":" + aSfOcc.surfaceForm, resOcc.resource, resOcc.similarityScore
-            , resOcc.feature("P(s|e)"), resOcc.feature("P(c|e)"), resOcc.feature("P(e)"))
-        
         resOcc
       }
       }
