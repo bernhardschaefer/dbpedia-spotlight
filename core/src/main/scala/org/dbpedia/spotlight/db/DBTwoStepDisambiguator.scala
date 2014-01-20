@@ -141,7 +141,10 @@ class DBTwoStepDisambiguator(
 
           val cands = candidateSearcher.getCandidates(sf)
           SpotlightLog.debug(this.getClass, "# candidates for: %s = %s.", sf, cands.size)
-
+          
+          //TODO remove verboose candidate logging again
+          SpotlightLog.debug(this.getClass, "candidates: %s", cands.toList.sortBy( _.prior ).reverse)
+          
           if (cands.size > MAX_CANDIDATES) {
             SpotlightLog.debug(this.getClass, "Reducing number of candidates to %d.", MAX_CANDIDATES)
             cands.toList.sortBy( _.prior ).reverse.take(MAX_CANDIDATES).toSet
@@ -214,6 +217,11 @@ class DBTwoStepDisambiguator(
         //Use the mixture to combine the scores
         resOcc.setSimilarityScore(mixture.getScore(resOcc))
 
+        //TODO remove verboose score logging again
+        SpotlightLog.debug(this.getClass, "sf: %s, res: %s, sim: %s, P(s|e): %s, P(c|e): %s, P(e): %s", 
+            aSfOcc.textOffset + ":" + aSfOcc.surfaceForm, resOcc.resource, resOcc.similarityScore
+            , resOcc.feature("P(s|e)"), resOcc.feature("P(c|e)"), resOcc.feature("P(e)"))
+        
         resOcc
       }
       }
