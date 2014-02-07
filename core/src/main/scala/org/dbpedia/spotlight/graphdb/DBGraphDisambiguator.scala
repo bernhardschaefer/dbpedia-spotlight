@@ -20,6 +20,7 @@ import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.subgraph._
 
 class DBGraphDisambiguator(
+  val graph: Graph,
   val candidateSearcher: DBCandidateSearcher,
   val surfaceFormStore: SurfaceFormStore,
   val config: Configuration) extends ParagraphDisambiguator {
@@ -35,7 +36,6 @@ class DBGraphDisambiguator(
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     //TODO cache all objects if config has not changed
-    val graph = GraphFactory.getDBpediaGraph()
     val settings = SubgraphConstructionSettings.fromConfig(config)
     val subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph, settings)
     val graphDisambiguator: GraphDisambiguator[DBpediaSurfaceForm, DBpediaSense] = GraphDisambiguatorFactory.newFromConfig(config)
@@ -56,18 +56,19 @@ class DBGraphDisambiguator(
 
     // disambiguate using subgraph
     val bestK = graphDisambiguator.bestK(surfaceFormsSenses, subgraph, k).asScala.mapValues(_.asScala.toList).toMap;
-    
+
     val sfOccs = unwrap(bestK)
 
     // set confidence as percentageOfSecondRank
-    sfOccs.foreach{case(sf, candOccs) =>
-	    (1 to candOccs.size-1).foreach{ i: Int =>
-	        val top = candOccs(i-1)
-	        val bottom = candOccs(i)
-	        top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
-	    }
+    sfOccs.foreach {
+      case (sf, candOccs) =>
+        (1 to candOccs.size - 1).foreach { i: Int =>
+          val top = candOccs(i - 1)
+          val bottom = candOccs(i)
+          top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
+        }
     }
-    
+
     sfOccs
   }
 
@@ -111,7 +112,7 @@ class DBGraphDisambiguator(
   }
 
   def wrap(sfResources: Map[SurfaceFormOccurrence, List[Candidate]]): java.util.Map[DBpediaSurfaceForm, java.util.List[DBpediaSense]] = {
-	// sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c.resource)).asJava)).asJava
+    // sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c.resource)).asJava)).asJava
     sfResources.map(kv => (new DBpediaSurfaceForm(kv._1), kv._2.map(c => new DBpediaSense(c)).asJava)).asJava
   }
 
@@ -128,12 +129,13 @@ class DBGraphDisambiguator(
 }
 
 object DBGraphDisambiguator {
-  def fromConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore, config: Configuration): DBGraphDisambiguator = {
-    new DBGraphDisambiguator(candidateSearcher, surfaceFormStore, config)
+  def fromConfig(graph: Graph, candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore, config: Configuration): DBGraphDisambiguator = {
+    new DBGraphDisambiguator(graph, candidateSearcher, surfaceFormStore, config)
   }
 
   def fromDefaultConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore): DBGraphDisambiguator = {
     val config = GraphConfig.config()
-    fromConfig(candidateSearcher, surfaceFormStore, config)
+    val graph = GraphFactory.getDBpediaGraph()
+    fromConfig(graph, candidateSearcher, surfaceFormStore, config)
   }
 }
