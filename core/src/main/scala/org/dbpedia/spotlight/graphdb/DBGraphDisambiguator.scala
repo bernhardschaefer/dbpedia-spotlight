@@ -52,14 +52,14 @@ class DBGraphDisambiguator(
     val surfaceFormsSenses = wrap(sfResources)
 
     // filter by best k and threshold support
-	CandidateSupportFilter.filterSensesByConfigMinSupport(surfaceFormsSenses, config);
-	CandidateSupportFilter.filterBestkSensesByConfigSupport(surfaceFormsSenses, config);
+	val minSupportSfss = CandidateSupportFilter.filterSensesByConfigMinSupport(surfaceFormsSenses, config)
+	val filteredSfss = CandidateSupportFilter.filterBestkSensesByConfigSupport(minSupportSfss, config)
     
     // create subgraph
-    val subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses)
+    val subgraph = subgraphConstruction.createSubgraph(filteredSfss)
 
     // disambiguate using subgraph
-    val bestK = graphDisambiguator.bestK(surfaceFormsSenses, subgraph, k).asScala.mapValues(_.asScala.toList).toMap;
+    val bestK = graphDisambiguator.bestK(filteredSfss, subgraph, k).asScala.mapValues(_.asScala.toList).toMap
 
     val sfOccs = unwrap(bestK)
 
