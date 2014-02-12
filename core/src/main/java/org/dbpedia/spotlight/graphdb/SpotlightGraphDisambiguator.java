@@ -66,8 +66,8 @@ public class SpotlightGraphDisambiguator extends AbstractSpotlightGraphDisambigu
 		Map<DBpediaSurfaceForm, List<DBpediaSense>> surfaceFormsSenses = DBpediaModelHelper.wrap(sfResources);
 
 		// filter by best k and threshold support
-		surfaceFormsSenses = CandidateSupportFilter.filterSensesByConfigMinSupport(surfaceFormsSenses, config);
-		surfaceFormsSenses = CandidateSupportFilter.filterBestkSensesByConfigSupport(surfaceFormsSenses, config);
+		surfaceFormsSenses = CandidateFilter.byConfigMinSupport(surfaceFormsSenses, config);
+		surfaceFormsSenses = CandidateFilter.maxKByConfigPrior(surfaceFormsSenses, config);
 
 		// create subgraph
 		SubgraphConstruction subgraphConstruction = SubgraphConstructionFactory.newSubgraphConstruction(graph,

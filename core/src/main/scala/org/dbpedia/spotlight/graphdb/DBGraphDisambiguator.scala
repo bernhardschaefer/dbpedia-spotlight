@@ -52,8 +52,8 @@ class DBGraphDisambiguator(
     val surfaceFormsSenses = wrap(sfResources)
 
     // filter by best k and threshold support
-	val minSupportSfss = CandidateSupportFilter.filterSensesByConfigMinSupport(surfaceFormsSenses, config)
-	val filteredSfss = CandidateSupportFilter.filterBestkSensesByConfigSupport(minSupportSfss, config)
+	val minSupportSfss = CandidateFilter.byConfigMinSupport(surfaceFormsSenses, config)
+	val filteredSfss = CandidateFilter.maxKByConfigPrior(minSupportSfss, config)
     
     // create subgraph
     val subgraph = subgraphConstruction.createSubgraph(filteredSfss)
