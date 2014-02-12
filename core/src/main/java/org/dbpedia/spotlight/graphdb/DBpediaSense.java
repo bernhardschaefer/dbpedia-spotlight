@@ -22,7 +22,7 @@ public class DBpediaSense extends DefaultSense implements Sense {
 	 */
 	public DBpediaSense(Candidate candidate) {
 		// Spotlight resources are URL encoded and need to be decoded
-		super(UriTransformer.decode(candidate.resource().getFullUri()), candidate.prior());
+		super(UriTransformer.decode(candidate.resource().getFullUri()), candidate.prior(), candidate.support());
 		this.resource = candidate.resource();
 	}
 	
@@ -31,7 +31,7 @@ public class DBpediaSense extends DefaultSense implements Sense {
 	 */
 	public DBpediaSense(DBpediaResource resource) {
 		// Spotlight resources are URL encoded and need to be decoded
-		super(UriTransformer.decode(resource.getFullUri()), resource.prior());
+		super(UriTransformer.decode(resource.getFullUri()), resource.prior(), resource.support());
 		this.resource = resource;
 	}
 

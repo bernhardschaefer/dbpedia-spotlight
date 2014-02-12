@@ -51,6 +51,10 @@ class DBGraphDisambiguator(
     val sfResources: Map[SurfaceFormOccurrence, List[Candidate]] = getOccurrencesCandidates(paragraph.occurrences, candidateSearcher)
     val surfaceFormsSenses = wrap(sfResources)
 
+    // filter by best k and threshold support
+	CandidateSupportFilter.filterSensesByConfigMinSupport(surfaceFormsSenses, config);
+	CandidateSupportFilter.filterBestkSensesByConfigSupport(surfaceFormsSenses, config);
+    
     // create subgraph
     val subgraph = subgraphConstruction.createSubgraph(surfaceFormsSenses)
 
