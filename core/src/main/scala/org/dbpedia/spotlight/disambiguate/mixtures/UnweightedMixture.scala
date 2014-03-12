@@ -1,7 +1,7 @@
 package org.dbpedia.spotlight.disambiguate.mixtures
 
 import org.dbpedia.spotlight.model.{Feature, DBpediaResourceOccurrence}
-import breeze.numerics._
+import org.dbpedia.spotlight.util.MathUtil
 import org.dbpedia.spotlight.log.SpotlightLog
 
 /**
@@ -14,8 +14,8 @@ class UnweightedMixture(features: Set[String]) extends Mixture(1) {
 
   def getScore(occurrence: DBpediaResourceOccurrence): Double = {
     val fs = occurrence.features.values.filter({ f: Feature => features.contains(f.featureName) }).map(_.value.asInstanceOf[Double])
-    val score = fs.foldLeft(0.0)((x: Double, y: Double) => if(x == -inf || y == -inf) -inf else x + y)
-
+    val score = MathUtil.lnproduct(fs)
+    
     //TODO remove verbose score logging again
     val fsMap = features.foldLeft(Map[String, Double]())(
       (acc, f) => acc + (f -> (occurrence.featureValue[Double](f).getOrElse(Double.NaN))))
