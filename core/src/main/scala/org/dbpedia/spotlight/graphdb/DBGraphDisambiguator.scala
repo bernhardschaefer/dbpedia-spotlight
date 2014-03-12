@@ -86,22 +86,16 @@ class DBGraphDisambiguator(
     val occs = occurrences.foldLeft(
       Map[SurfaceFormOccurrence, List[Candidate]]())(
         (acc, sfOcc) => {
-
           SpotlightLog.debug(this.getClass, "Searching...")
 
           val candidateRes = {
-            val sf = try {
-              surfaceFormStore.getSurfaceForm(sfOcc.surfaceForm.name)
-            } catch {
-              case e: SurfaceFormNotFoundException => sfOcc.surfaceForm
-            }
-
-            val cands = candidateSearcher.getCandidates(sf)
-            SpotlightLog.debug(this.getClass, "# candidates for: %s = %s.", sf, cands.size)
-
-            if (cands.size > MAX_CANDIDATES) {
-              SpotlightLog.debug(this.getClass, "Reducing number of candidates to %d.", MAX_CANDIDATES)
-              cands.toList.sortBy(_.prior).reverse.take(MAX_CANDIDATES).toSet
+	
+	        val cands = candidateSearcher.getCandidates(sfOcc.surfaceForm)
+	        SpotlightLog.debug(this.getClass, "# candidates for: %s = %s.", sfOcc.surfaceForm, cands.size)
+          
+	        if (cands.size > MAX_CANDIDATES) {
+	          SpotlightLog.debug(this.getClass, "Reducing number of candidates to %d.", MAX_CANDIDATES)
+              cands.toList.sortBy( -_.prior ).take(MAX_CANDIDATES).toSet
             } else {
               cands
             }
@@ -112,6 +106,7 @@ class DBGraphDisambiguator(
 
     SpotlightLog.info(getClass(), "Found %d total resource candidates for %d surface forms. Elapsed time: %s",
       occs.values.foldLeft(0)((total, cs) => total + cs.size), occs.size, timer)
+    
     occs
   }
 
