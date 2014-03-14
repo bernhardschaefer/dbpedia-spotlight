@@ -1,5 +1,6 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
+
 import org.apache.commons.configuration.Configuration
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
@@ -7,15 +8,16 @@ import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
+
 import com.google.common.base.Stopwatch
 import com.tinkerpop.blueprints.Graph
+
 import de.unima.dws.dbpediagraph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
 import de.unima.dws.dbpediagraph.graph._
 import de.unima.dws.dbpediagraph.model.SurfaceFormSenseScore
 import de.unima.dws.dbpediagraph.subgraph._
-import de.unima.dws.dbpediagraph.weights.OccurrenceCounts
 
 class DBGraphDisambiguator(
   val graph: Graph,
@@ -138,7 +140,6 @@ object DBGraphDisambiguator {
   def fromDefaultConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore): DBGraphDisambiguator = {
     val config = GraphConfig.config()
     val graph = GraphFactory.getDBpediaGraph()
-    OccurrenceCounts.doWarmupIfConfigured(config)
     fromConfig(graph, candidateSearcher, surfaceFormStore, config)
   }
 }
