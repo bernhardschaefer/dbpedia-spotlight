@@ -111,7 +111,7 @@ public class Server {
 
 
         SelectorThread threadSelector = GrizzlyWebContainerFactory.create(serverURI, initParams);
-        threadSelector.setTransactionTimeout(0);
+        threadSelector.setTransactionTimeout(30 * 60 * 1000); // 30 minutes
         threadSelector.start();
 
         System.err.println("Server started in " + System.getProperty("user.dir") + " listening on " + serverURI);
