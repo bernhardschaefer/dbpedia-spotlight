@@ -1,5 +1,6 @@
 package org.dbpedia.spotlight.graphdb
 import scala.collection.JavaConverters._
+
 import org.apache.commons.configuration.Configuration
 import org.dbpedia.spotlight.db.DBCandidateSearcher
 import org.dbpedia.spotlight.db.model._
@@ -7,8 +8,11 @@ import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.exceptions.SurfaceFormNotFoundException
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model._
+
 import com.google.common.base.Stopwatch
 import com.tinkerpop.blueprints.Graph
+
+import breeze.linalg
 import de.unima.dws.dbpediagraph._
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguator
 import de.unima.dws.dbpediagraph.disambiguate.GraphDisambiguatorFactory
@@ -50,9 +54,9 @@ class DBGraphDisambiguator(
     val surfaceFormsSenses = wrap(sfResources)
 
     // filter by best k and threshold support
-	val minSupportSfss = CandidateFilter.byConfigMinSupport(surfaceFormsSenses, config)
-	val filteredSfss = CandidateFilter.maxKByConfigPrior(minSupportSfss, config)
-    
+    val minSupportSfss = CandidateFilter.byConfigMinSupport(surfaceFormsSenses, config)
+    val filteredSfss = CandidateFilter.maxKByConfigPrior(minSupportSfss, config)
+
     // create subgraph
     val subgraph = subgraphConstruction.createSubgraph(filteredSfss)
 
@@ -61,17 +65,43 @@ class DBGraphDisambiguator(
 
     val sfOccs = unwrap(bestK)
 
-    // set confidence as percentageOfSecondRank
-    sfOccs.foreach {
-      case (sf, candOccs) =>
-        (1 to candOccs.size - 1).foreach { i: Int =>
-          val top = candOccs(i - 1)
-          val bottom = candOccs(i)
-          top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
-        }
-    }
+    val sfOccsNormalized = normalizeScores(sfOccs)
 
-    sfOccs
+    sfOccsNormalized
+  }
+
+  def normalizeScores(sfOccs: Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
+    // set confidence as percentageOfSecondRank
+    //    sfOccs.foreach {
+    //      case (sf, candOccs) =>
+    //        (1 to candOccs.size - 1).foreach { i: Int =>
+    //          val top = candOccs(i - 1)
+    //          val bottom = candOccs(i)
+    //          top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
+    //        }
+    //    }
+
+    val sfOccsNormalized = sfOccs.map(kv => {
+      val sf = kv._1
+      val candOccs = kv._2
+
+      (1 to candOccs.size - 1).foreach { i: Int =>
+        val top = candOccs(i - 1)
+        val bottom = candOccs(i)
+        top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
+      }
+
+      //Compute the final score as a softmax function, get the total score first:
+      val similaritySoftMaxTotal = linalg.softmax(candOccs.map(_.similarityScore))
+
+      candOccs.foreach { o: DBpediaResourceOccurrence =>
+        o.setSimilarityScore(breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal)) // e^xi / \sum e^xi
+      }
+
+      sf -> candOccs
+    })
+
+    sfOccsNormalized
   }
 
   //maximum number of considered candidates

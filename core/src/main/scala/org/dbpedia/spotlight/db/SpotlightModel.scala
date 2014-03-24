@@ -20,6 +20,7 @@ import opennlp.tools.chunker.ChunkerModel
 import opennlp.tools.namefind.TokenNameFinderModel
 import stem.SnowballStemmer
 import tokenize.{OpenNLPTokenizer, LanguageIndependentTokenizer}
+import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
 
 
 class SpotlightModel(val tokenizer: TextTokenizer,
@@ -103,7 +104,8 @@ object SpotlightModel {
     }
 
     val searcher      = new DBCandidateSearcher(resStore, sfStore, candMapStore)
-    val disambiguator = new ParagraphDisambiguatorJ(new DBTwoStepDisambiguator(
+    
+    val disambiguatorScala = new DBTwoStepDisambiguator(
       tokenTypeStore,
       sfStore,
       resStore,
@@ -111,10 +113,14 @@ object SpotlightModel {
       contextStore,
       new UnweightedMixture(Set("P(e)", "P(c|e)", "P(s|e)")),
       new GenerativeContextSimilarity(tokenTypeStore)
-    ))
+    )
+    val disambiguator = new ParagraphDisambiguatorJ(disambiguatorScala)
     
-    val graphDisambiguator = new ParagraphDisambiguatorJ(DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore))
+    val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
+    val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
+    val mergedDisambiguator = new ParagraphDisambiguatorJ(new DBMergedDisambiguator(graphDisambiguatorScala, disambiguatorScala))
+    
     //If there is at least one NE model or a chunker, use the OpenNLP spotter:
     val spotter = if( new File(modelFolder, "opennlp").exists() && new File(modelFolder, "opennlp").list().exists(f => f.startsWith("ner-") || f.startsWith("chunker")) ) {
       val nerModels = new File(modelFolder, "opennlp").list().filter(_.startsWith("ner-")).map { f: String =>
@@ -155,7 +161,10 @@ object SpotlightModel {
 
 
     val spotters: java.util.Map[SpotterPolicy, Spotter] = Map(SpotterPolicy.SpotXmlParser -> new SpotXmlParser(), SpotterPolicy.Default -> spotter).asJava
-    val disambiguators: java.util.Map[DisambiguationPolicy, ParagraphDisambiguatorJ] = Map(DisambiguationPolicy.Default -> disambiguator, DisambiguationPolicy.GraphBased -> graphDisambiguator).asJava
+    val disambiguators: java.util.Map[DisambiguationPolicy, ParagraphDisambiguatorJ] = Map(
+        DisambiguationPolicy.Default -> disambiguator, 
+        DisambiguationPolicy.GraphBased -> graphDisambiguator,
+        DisambiguationPolicy.Merged -> mergedDisambiguator).asJava
     new SpotlightModel(tokenizer, spotters, disambiguators, properties)
   }
 }
