@@ -92,11 +92,13 @@ class DBGraphDisambiguator(
       }
 
       //Compute the final score as a softmax function, get the total score first:
-      val similaritySoftMaxTotal = linalg.softmax(candOccs.map(_.similarityScore))
+      // val similaritySoftMaxTotal = linalg.softmax(candOccs.map(_.similarityScore))
+      val similarityScoreSum = candOccs.foldLeft(0.0)(_ + _.similarityScore)
 
       candOccs.foreach { o: DBpediaResourceOccurrence =>
         {
-          val normalizedScore = breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal) // e^xi / \sum e^xi
+          // val normalizedScore = breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal) // e^xi / \sum e^xi
+          val normalizedScore = o.similarityScore / similarityScoreSum
           SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource.uri, o.similarityScore, normalizedScore)
           o.setSimilarityScore(normalizedScore)
         }
