@@ -97,7 +97,7 @@ class DBGraphDisambiguator(
       candOccs.foreach { o: DBpediaResourceOccurrence =>
         {
           val normalizedScore = breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal) // e^xi / \sum e^xi
-          SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource, o.similarityScore, normalizedScore)
+          SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource.uri, o.similarityScore, normalizedScore)
           o.setSimilarityScore(normalizedScore)
         }
       }
