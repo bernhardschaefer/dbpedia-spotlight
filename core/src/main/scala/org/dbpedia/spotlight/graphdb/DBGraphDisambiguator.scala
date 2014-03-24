@@ -81,7 +81,7 @@ class DBGraphDisambiguator(
     //        }
     //    }
 
-    val sfOccsNormalized = sfOccs.map(kv => {
+    sfOccs.foreach(kv => {
       val sf = kv._1
       val candOccs = kv._2
 
@@ -95,13 +95,17 @@ class DBGraphDisambiguator(
       val similaritySoftMaxTotal = linalg.softmax(candOccs.map(_.similarityScore))
 
       candOccs.foreach { o: DBpediaResourceOccurrence =>
-        o.setSimilarityScore(breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal)) // e^xi / \sum e^xi
+        {
+          val normalizedScore = breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal) // e^xi / \sum e^xi
+          SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource, o.similarityScore, normalizedScore)
+          o.setSimilarityScore(normalizedScore)
+        }
       }
 
       sf -> candOccs
     })
 
-    sfOccsNormalized
+    sfOccs
   }
 
   //maximum number of considered candidates
@@ -114,8 +118,6 @@ class DBGraphDisambiguator(
     val occs = occurrences.foldLeft(
       Map[SurfaceFormOccurrence, List[Candidate]]())(
         (acc, sfOcc) => {
-
-          SpotlightLog.debug(this.getClass, "Searching...")
 
           val candidateRes = {
             val sf = try {
