@@ -172,7 +172,7 @@ object DBGraphDisambiguator {
   def fromDefaultConfig(candidateSearcher: DBCandidateSearcher, surfaceFormStore: SurfaceFormStore): DBGraphDisambiguator = {
     val config = GraphConfig.config()
     val graph = GraphFactory.getDBpediaGraph()
-    EdgeWeightsFactory.dbpediaFromConfig(config) // call to preload edge weights map if configured
+    // EdgeWeightsFactory.dbpediaFromConfig(config) // call to preload edge weights map if configured
     fromConfig(graph, candidateSearcher, surfaceFormStore, config)
   }
 }
