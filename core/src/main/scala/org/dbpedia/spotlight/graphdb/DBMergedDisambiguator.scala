@@ -43,7 +43,7 @@ class DBMergedDisambiguator(
 
         val mergedOcc = graphOcc match {
           case Some(occ) => {
-            SpotlightLog.debug(this.getClass, "%s has both stat score (%d) and graph score (%d).", sfo, statOcc.similarityScore, occ.similarityScore)
+            SpotlightLog.debug(this.getClass, "%s has both stat score (%.4f) and graph score (%.4f).", sfo, statOcc.similarityScore, occ.similarityScore)
             new DBpediaResourceOccurrence(
               statOcc.id,
               statOcc.resource,
@@ -54,7 +54,7 @@ class DBMergedDisambiguator(
               statOcc.similarityScore + occ.similarityScore)
           }
           case None => {
-            SpotlightLog.debug(this.getClass, "%s has only stat score (%d)", sfo, statOcc.similarityScore)
+            SpotlightLog.debug(this.getClass, "%s has only stat score (%.4f)", sfo, statOcc.similarityScore)
             statOcc
           }
         }
@@ -63,7 +63,7 @@ class DBMergedDisambiguator(
       })
 
       val mergedOccsSorted = mergedOccs.sortBy(o => o.similarityScore).reverse
-      // SpotlightLog.debug(this.getClass, "%s has only stat score (%d)", sfo, mergedOccsSorted)
+      // SpotlightLog.debug(this.getClass, "%s has only stat score (%.4f)", sfo, mergedOccsSorted)
 
       sfo -> mergedOccsSorted
     })
