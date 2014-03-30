@@ -45,14 +45,15 @@ class DBMergedDisambiguator(
 
       val graphOccs = bestKGraph.getOrElse(sfo, List[DBpediaResourceOccurrence]())
 
+      // go over all statistical bestK entities, try to find graph score for each entity
       val mergedOccs = statOccs.map(statOcc => {
         graphOccs.find(occ => occ.equals(statOcc)) match {
-          case Some(occ) => {
+          case Some(graphOcc) => { // merge scores if there is a graph score for entity graphOcc
             val statScore = statOcc.similarityScore
-            val graphScore = occ.similarityScore
+            val graphScore = graphOcc.similarityScore
             val mergedScore = weightedLinearCombination(graphScore, statScore)
-            SpotlightLog.debug(this.getClass, "%s (pos %d): %.3f (graph x statistical = %.2f x %.2f + %.2f x %.2f)",
-              sfo.surfaceForm.name, sfo.textOffset, mergedScore, w_graph, graphScore, w_stat, statScore)
+            SpotlightLog.debug(this.getClass, "%s[pos %d]->%s: %.3f (graph x statistical = %.2f x %.2f + %.2f x %.2f)",
+              sfo.surfaceForm.name, sfo.textOffset, graphOcc.resource.uri, mergedScore, w_graph, graphScore, w_stat, statScore)
             new DBpediaResourceOccurrence(
               statOcc.id,
               statOcc.resource,
@@ -63,8 +64,8 @@ class DBMergedDisambiguator(
               mergedScore)
           }
           case None => {
-            SpotlightLog.debug(this.getClass, "%s (pos %d) has only stat score (%.4f)",
-              sfo.surfaceForm.name, sfo.textOffset, statOcc.similarityScore)
+            SpotlightLog.debug(this.getClass, "%s[pos %d]->%s: only stat score (%.4f)",
+              sfo.surfaceForm.name, sfo.textOffset, statOcc.resource.uri, statOcc.similarityScore)
             statOcc
           }
         }
