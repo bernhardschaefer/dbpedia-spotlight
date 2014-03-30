@@ -28,8 +28,8 @@ class DBMergedDisambiguator(
       .sortBy(_.textOffset)
   }
 
-  val w_graph = 0.6
-  val w_stat = 0.4
+  val w_graph = 0.35
+  val w_stat = 0.65
 
   def weightedLinearCombination(sim_graph: Double, sim_stat: Double): Double = {
     w_graph * sim_graph + w_stat * sim_stat
