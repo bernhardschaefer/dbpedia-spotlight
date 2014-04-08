@@ -21,6 +21,7 @@ import opennlp.tools.namefind.TokenNameFinderModel
 import stem.SnowballStemmer
 import tokenize.{OpenNLPTokenizer, LanguageIndependentTokenizer}
 import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
+import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
 
 
 class SpotlightModel(val tokenizer: TextTokenizer,
@@ -119,7 +120,11 @@ object SpotlightModel {
     val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
     val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
-    val mergedDisambiguator = new ParagraphDisambiguatorJ(new DBMergedDisambiguator(graphDisambiguatorScala, disambiguatorScala))
+    val mergedDisambiguator = new ParagraphDisambiguatorJ(new DBMergedDisambiguator(
+        graphDisambiguatorScala, 
+        disambiguatorScala,
+        new LinearRegressionFeatureMixture(List(("P(e)", 0.0216), ("P(c|e)", 0.0005), ("P(s|e)", 0.2021), ("P(g|e)", 0.2)), 0)
+    ))
     
     //If there is at least one NE model or a chunker, use the OpenNLP spotter:
     val spotter = if( new File(modelFolder, "opennlp").exists() && new File(modelFolder, "opennlp").list().exists(f => f.startsWith("ner-") || f.startsWith("chunker")) ) {

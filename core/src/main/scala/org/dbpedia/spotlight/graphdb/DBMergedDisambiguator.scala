@@ -5,14 +5,17 @@ import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import org.dbpedia.spotlight.model.Paragraph
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence
+import org.dbpedia.spotlight.disambiguate.mixtures.Mixture
+import org.dbpedia.spotlight.model.Score
 
 /**
- * Combines DBTwoStepDisambiguator and DBGraphBasedDisambiguator bestK
+ * Combines DBTwoStepDisambiguator and DBGraphBasedDisambiguator bestK using the provided Mixture.
  *
  */
 class DBMergedDisambiguator(
   val graphDisambiguator: ParagraphDisambiguator,
-  val statDisambiguator: ParagraphDisambiguator) extends ParagraphDisambiguator {
+  val statDisambiguator: ParagraphDisambiguator,
+  val mixture: Mixture) extends ParagraphDisambiguator {
 
   //maximum number of considered candidates
   val MAX_CANDIDATES = 20
@@ -26,13 +29,6 @@ class DBMergedDisambiguator(
         kv._2.head)
       .toList
       .sortBy(_.textOffset)
-  }
-
-  val w_graph = 0.6
-  val w_stat = 0.4
-
-  def weightedLinearCombination(sim_graph: Double, sim_stat: Double): Double = {
-    w_graph * sim_graph + w_stat * sim_stat
   }
 
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
@@ -49,19 +45,19 @@ class DBMergedDisambiguator(
       val mergedOccs = statOccs.map(statOcc => {
         graphOccs.find(occ => occ.equals(statOcc)) match {
           case Some(graphOcc) => { // merge scores if there is a graph score for entity graphOcc
-            val statScore = statOcc.similarityScore
-            val graphScore = graphOcc.similarityScore
-            val mergedScore = weightedLinearCombination(graphScore, statScore)
-            SpotlightLog.debug(this.getClass, "%s[pos %d]->%s: %.3f (graph x statistical = %.2f x %.2f + %.2f x %.2f)",
-              sfo.surfaceForm.name, sfo.textOffset, graphOcc.resource.uri, mergedScore, w_graph, graphScore, w_stat, statScore)
-            new DBpediaResourceOccurrence(
+            val mergedOcc = new DBpediaResourceOccurrence(
               statOcc.id,
               statOcc.resource,
               statOcc.surfaceForm,
               statOcc.context,
               statOcc.textOffset,
-              statOcc.provenance,
-              mergedScore)
+              statOcc.provenance)
+            
+            mergedOcc.features ++= statOcc.features
+            mergedOcc.features ++= graphOcc.features
+            mergedOcc.setSimilarityScore(mixture.getScore(mergedOcc))
+
+            mergedOcc
           }
           case None => {
             SpotlightLog.debug(this.getClass, "%s[pos %d]->%s: only stat score (%.4f)",
@@ -72,8 +68,6 @@ class DBMergedDisambiguator(
       })
 
       val mergedOccsSorted = mergedOccs.sortBy(o => o.similarityScore).reverse
-      // SpotlightLog.debug(this.getClass, "%s has only stat score (%.4f)", sfo.surfaceForm.name, sfo.textOffset, mergedOccsSorted)
-
       sfo -> mergedOccsSorted
     })
 
