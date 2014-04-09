@@ -12,12 +12,20 @@ import org.dbpedia.spotlight.model.Factory
 import org.dbpedia.spotlight.model.SpotlightConfiguration.DisambiguationPolicy
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
+import breeze.regress.LinearRegression
+import breeze.linalg.DenseMatrix
+import breeze.linalg.DenseVector
+import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
+import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
 
 object FeatureWeightsLearner {
 
   def main(args: Array[String]) {
+    //TODO error handling
     val corpus = AidaCorpus.fromFile(new File(args(1))) // /path/to/AIDA-YAGO2-dataset.tsv
     val db = SpotlightModel.fromFolder(new File(args(0)))
+    db.disambiguators.get(DisambiguationPolicy.Default).asInstanceOf[DBTwoStepDisambiguator].tokenizer = db.tokenizer;
+    //TODO read DisambiguationPolicy from args
     val mergedDisambiguator = db.disambiguators.get(DisambiguationPolicy.Merged)
     learnWeights(corpus, mergedDisambiguator.disambiguator)
   }
@@ -53,6 +61,15 @@ object FeatureWeightsLearner {
       }
 
     })
+
+    //TODO use breeze linear regression
+    // check https://github.com/dbpedia-spotlight/dbpedia-spotlight/blob/48fc19d9002c496a3c39c816dce3816b885fcbf4/index/src/main/scala/org/dbpedia/spotlight/db/SpotterTuner.scala
+
+    //    val x = DenseMatrix.zeros[Double](ny, nx)
+    //    val y = DenseVector.zeros[Double](ny)
+    //    
+    //    val regressed = LinearRegression.regress(x, y)
+    //    println(regressed.activeValuesIterator.mkString(" "))
   }
 
   def formatWeights(occ: DBpediaResourceOccurrence): String = {
