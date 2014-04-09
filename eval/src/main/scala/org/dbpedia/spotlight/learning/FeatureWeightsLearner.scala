@@ -24,7 +24,7 @@ object FeatureWeightsLearner {
     //TODO error handling
     val corpus = AidaCorpus.fromFile(new File(args(1))) // /path/to/AIDA-YAGO2-dataset.tsv
     val db = SpotlightModel.fromFolder(new File(args(0)))
-    db.disambiguators.get(DisambiguationPolicy.Default).asInstanceOf[DBTwoStepDisambiguator].tokenizer = db.tokenizer;
+    db.disambiguators.get(DisambiguationPolicy.Default).disambiguator.asInstanceOf[DBTwoStepDisambiguator].tokenizer = db.tokenizer;
     //TODO read DisambiguationPolicy from args
     val mergedDisambiguator = db.disambiguators.get(DisambiguationPolicy.Merged)
     learnWeights(corpus, mergedDisambiguator.disambiguator)
