@@ -1,8 +1,11 @@
 package org.dbpedia.spotlight.learning
 
 import java.io.File
+
 import scala.collection.mutable.ListBuffer
+
 import org.dbpedia.spotlight.corpus.AidaCorpus
+import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
 import org.dbpedia.spotlight.db.SpotlightModel
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.io.AnnotatedTextSource
@@ -11,12 +14,6 @@ import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import org.dbpedia.spotlight.model.Factory
 import org.dbpedia.spotlight.model.SpotlightConfiguration.DisambiguationPolicy
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence
-import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
-import breeze.regress.LinearRegression
-import breeze.linalg.DenseMatrix
-import breeze.linalg.DenseVector
-import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
-import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
 
 object FeatureWeightsLearner {
 
@@ -46,6 +43,11 @@ object FeatureWeightsLearner {
     gsOccs.foreach(gsOcc => {
       val spot = spots.find(sfo => sfo.surfaceForm.equals(gsOcc.surfaceForm) && sfo.textOffset.equals(gsOcc.textOffset)).get
       val occs = bestK(spot).sortBy(_.textOffset)
+
+      occs.foreach(occ => {
+        SpotlightLog.debug(this.getClass, "%s --> %s [%s]",
+          occ.textOffset + ":" + occ.surfaceForm.name, occ.resource.uri, formatWeights(occ))
+      })
 
       val incorrectEntity = occs.find(!_.resource.equals(gsOcc.resource))
       val correctEntity = occs.find(_.resource.equals(gsOcc.resource))
@@ -77,6 +79,6 @@ object FeatureWeightsLearner {
       occ.featureValue[Double]("P(e)").get,
       occ.featureValue[Double]("P(c|e)").get,
       occ.featureValue[Double]("P(s|e)").get,
-      occ.featureValue[Double]("P(g|e)").get)
+      occ.featureValue[Double]("P(g|e)").getOrElse(0.0))
   }
 }
