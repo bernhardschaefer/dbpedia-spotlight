@@ -19,7 +19,8 @@ object FeatureWeightsLearner {
   def main(args: Array[String]) {
     val k = 7
     //TODO error handling
-    val corpus = AidaCorpus.fromFile(new File(args(1))) // /path/to/AIDA-YAGO2-dataset.tsv
+    val corpus: AnnotatedTextSource = AidaCorpus.fromFile(new File(args(1))) // /path/to/AIDA-YAGO2-dataset.tsv
+    SpotlightLog.info(this.getClass(), "Loaded corpus %s with %d documents.", corpus.name, corpus.foldLeft(0)((acc, doc) => acc + 1))
     val db = SpotlightModel.fromFolder(new File(args(0)))
     db.disambiguators.get(DisambiguationPolicy.Default).disambiguator.asInstanceOf[DBTwoStepDisambiguator].tokenizer = db.tokenizer;
     //TODO read DisambiguationPolicy from args
@@ -35,7 +36,7 @@ object FeatureWeightsLearner {
     //    3.1. bestK: get weights for highest ranked incorrect entity
     //    3.2. bestK: get weights for correct gs entity
 
-    corpus.foreach(doc => {
+    corpus.filter(_.occurrences.nonEmpty).foreach(doc => {
       val spots: List[SurfaceFormOccurrence] = doc.occurrences.map(occ =>
         new SurfaceFormOccurrence(occ.surfaceForm, occ.context, occ.textOffset, occ.provenance, -1))
 
@@ -47,7 +48,7 @@ object FeatureWeightsLearner {
         val occs = bestK(spot).sortBy(_.textOffset)
 
         occs.foreach(occ => {
-          SpotlightLog.debug(this.getClass, "%s --> %s [%s]",
+          SpotlightLog.info(this.getClass, "%s --> %s [%s]",
             occ.textOffset + ":" + occ.surfaceForm.name, occ.resource.uri, formatWeights(occ))
         })
 
@@ -55,13 +56,13 @@ object FeatureWeightsLearner {
         val correctEntity = occs.find(_.resource.equals(gsOcc.resource))
 
         incorrectEntity match {
-          case Some(occ) => printf("0%s%n", formatWeights(occ))
-          case None => printf("No incorrect entity found for %s[pos %d]%n", gsOcc.surfaceForm.name, gsOcc.textOffset)
+          case Some(occ) => SpotlightLog.info(this.getClass(), "0%s%n", formatWeights(occ))
+          case None => SpotlightLog.info(this.getClass(), "No incorrect entity found for %s[pos %d]%n", gsOcc.surfaceForm.name, gsOcc.textOffset)
         }
 
         correctEntity match {
-          case Some(occ) => printf("1%s%n", formatWeights(occ))
-          case None => printf("No correct entity found for %s[pos %d]%n", gsOcc.surfaceForm.name, gsOcc.textOffset)
+          case Some(occ) => SpotlightLog.info(this.getClass(), "1%s%n", formatWeights(occ))
+          case None => SpotlightLog.info(this.getClass(), "No correct entity found for %s[pos %d]%n", gsOcc.surfaceForm.name, gsOcc.textOffset)
         }
 
       })
