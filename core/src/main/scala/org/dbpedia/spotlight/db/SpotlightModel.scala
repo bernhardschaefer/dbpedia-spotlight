@@ -20,7 +20,7 @@ import opennlp.tools.chunker.ChunkerModel
 import opennlp.tools.namefind.TokenNameFinderModel
 import stem.SnowballStemmer
 import tokenize.{OpenNLPTokenizer, LanguageIndependentTokenizer}
-import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
+import org.dbpedia.spotlight.graphdb.DBNaiveMergedDisambiguator
 import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
 
 
@@ -120,10 +120,11 @@ object SpotlightModel {
     val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
     val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
-    val mergedDisambiguator = new ParagraphDisambiguatorJ(new DBMergedDisambiguator(
+    //TODO switch to DBMergedDisambiguator when proper weights have been learned 
+    val mergedDisambiguator = new ParagraphDisambiguatorJ(new DBNaiveMergedDisambiguator(
         graphDisambiguatorScala, 
-        disambiguatorScala,
-        new LinearRegressionFeatureMixture(List(("P(e)", 0.0216), ("P(c|e)", 0.0005), ("P(s|e)", 0.2021), ("P(g|e)", 0.2)), 0)
+        disambiguatorScala
+//        new LinearRegressionFeatureMixture(List(("P(e)", -0.0216), ("P(c|e)", -0.0005), ("P(s|e)", -0.2021), ("P(g|e)", 0.25)), 0)
     ))
     
     //If there is at least one NE model or a chunker, use the OpenNLP spotter:

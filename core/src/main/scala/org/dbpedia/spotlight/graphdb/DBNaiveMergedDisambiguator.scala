@@ -1,20 +1,18 @@
 package org.dbpedia.spotlight.graphdb
 
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
-import org.dbpedia.spotlight.disambiguate.mixtures.Mixture
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import org.dbpedia.spotlight.model.Paragraph
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence
 
 /**
- * Combines DBTwoStepDisambiguator and DBGraphBasedDisambiguator bestK using the provided Mixture.
+ * Combines DBTwoStepDisambiguator and DBGraphBasedDisambiguator bestK
  *
  */
-class DBMergedDisambiguator(
+class DBNaiveMergedDisambiguator(
   val graphDisambiguator: ParagraphDisambiguator,
-  val statDisambiguator: ParagraphDisambiguator,
-  val mixture: Mixture) extends ParagraphDisambiguator {
+  val statDisambiguator: ParagraphDisambiguator) extends ParagraphDisambiguator {
 
   def disambiguate(paragraph: Paragraph): List[DBpediaResourceOccurrence] = {
     //maximum number of considered candidates
@@ -29,6 +27,13 @@ class DBMergedDisambiguator(
       .sortBy(_.textOffset)
   }
 
+  val w_graph = 0.35
+  val w_stat = 0.65
+
+  def weightedLinearCombination(sim_graph: Double, sim_stat: Double): Double = {
+    w_graph * sim_graph + w_stat * sim_stat
+  }
+
   def bestK(paragraph: Paragraph, k: Int): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
     val bestKGraph = graphDisambiguator.bestK(paragraph, k)
     val bestKStat = statDisambiguator.bestK(paragraph, k)
@@ -39,37 +44,38 @@ class DBMergedDisambiguator(
 
       val graphOccs = bestKGraph.getOrElse(sfo, List[DBpediaResourceOccurrence]())
 
-      //TODO (1) the linreg mixture score cannot simply be joined with the fallback unweighted mixture statistical score
-      // --> solution1: make sure both (stat. & graph-based) use the same candidate set so that the fallback case never happens
-      // --> solution2: always use linreg mixture, set graph-based score to zero if no graph score exists
-      
-      // go over all statistical bestK entities, try to find graph score for each entity
       val mergedOccs = statOccs.map(statOcc => {
         graphOccs.find(occ => occ.equals(statOcc)) match {
-          case Some(graphOcc) => { // merge scores if there is a graph score for entity graphOcc
+          case Some(graphOcc) => {
+            val statScore = statOcc.similarityScore
+            val graphScore = graphOcc.similarityScore
+            val mergedScore = weightedLinearCombination(graphScore, statScore)
+            SpotlightLog.debug(this.getClass, "%s (pos %d): %.3f (graph x statistical = %.2f x %.2f + %.2f x %.2f)",
+              sfo.surfaceForm.name, sfo.textOffset, mergedScore, w_graph, graphScore, w_stat, statScore)
             val mergedOcc = new DBpediaResourceOccurrence(
               statOcc.id,
               statOcc.resource,
               statOcc.surfaceForm,
               statOcc.context,
               statOcc.textOffset,
-              statOcc.provenance)
+              statOcc.provenance,
+              mergedScore)
 
             mergedOcc.features ++= statOcc.features
             mergedOcc.features ++= graphOcc.features
-            mergedOcc.setSimilarityScore(mixture.getScore(mergedOcc))
 
             mergedOcc
           }
           case None => {
-            SpotlightLog.debug(this.getClass, "%s[pos %d]->%s: only stat score (%.4f)",
-              sfo.surfaceForm.name, sfo.textOffset, statOcc.resource.uri, statOcc.similarityScore)
+            SpotlightLog.debug(this.getClass, "%s (pos %d) has only stat score (%.4f)",
+              sfo.surfaceForm.name, sfo.textOffset, statOcc.similarityScore)
             statOcc
           }
         }
       })
 
       val mergedOccsSorted = mergedOccs.sortBy(o => o.similarityScore).reverse.take(k)
+
       sfo -> mergedOccsSorted
     })
 
