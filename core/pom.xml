@@ -241,7 +241,7 @@
 
 		<dependency>
 			<groupId>de.unima.dws</groupId>
-			<artifactId>dbpedia-graphdb</artifactId>
+			<artifactId>dbpedia-graph</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
     </dependencies>
