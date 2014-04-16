@@ -52,7 +52,7 @@ class DumpVowpalTrainingDataHandler(val fileName: String) extends TrainingDataHa
     val featuresString = features.foldLeft(new StringBuilder())((builder, pair) => {
       builder ++= " %s:%.12f".format(pair._1, pair._2)
     }).toString()
-    writer.println("%d %s[%d]->%s|%s".format(target, occ.surfaceForm.name, occ.textOffset, occ.resource.uri, featuresString))
+    writer.println("%f %s[%d]->%s|%s".format(target, occ.surfaceForm.name, occ.textOffset, occ.resource.uri, featuresString))
   }
 
   def finish() = {
