@@ -66,7 +66,7 @@ class DBTwoStepDisambiguator(
   }
 
   //maximum number of considered candidates
-  val MAX_CANDIDATES = 20
+  val MAX_CANDIDATES = 10
 
   //maximum context window in tokens in both directions
   val MAX_CONTEXT = 250
