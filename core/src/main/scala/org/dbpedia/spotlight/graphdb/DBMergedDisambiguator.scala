@@ -1,10 +1,12 @@
 package org.dbpedia.spotlight.graphdb
 
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
+import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
 import org.dbpedia.spotlight.disambiguate.mixtures.Mixture
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import org.dbpedia.spotlight.model.Paragraph
+import org.dbpedia.spotlight.model.Score
 import org.dbpedia.spotlight.model.SurfaceFormOccurrence
 
 /**
@@ -17,10 +19,8 @@ class DBMergedDisambiguator(
   val mixture: Mixture) extends ParagraphDisambiguator {
 
   def disambiguate(paragraph: Paragraph): List[DBpediaResourceOccurrence] = {
-    //maximum number of considered candidates
-    val MAX_CANDIDATES = 20
     // return first from each candidate set
-    bestK(paragraph, MAX_CANDIDATES)
+    bestK(paragraph, 10)
       .filter(kv =>
         kv._2.nonEmpty)
       .map(kv =>
@@ -42,7 +42,7 @@ class DBMergedDisambiguator(
       //TODO (1) the linreg mixture score cannot simply be joined with the fallback unweighted mixture statistical score
       // --> solution1: make sure both (stat. & graph-based) use the same candidate set so that the fallback case never happens
       // --> solution2: always use linreg mixture, set graph-based score to zero if no graph score exists
-      
+
       // go over all statistical bestK entities, try to find graph score for each entity
       val mergedOccs = statOccs.map(statOcc => {
         graphOccs.find(occ => occ.equals(statOcc)) match {
@@ -55,8 +55,11 @@ class DBMergedDisambiguator(
               statOcc.textOffset,
               statOcc.provenance)
 
+            mergedOcc.contextualScore = statOcc.contextualScore
+            mergedOcc.setFeature(new Score(DBMergedDisambiguator.PStat, statOcc.similarityScore))
             mergedOcc.features ++= statOcc.features
             mergedOcc.features ++= graphOcc.features
+
             mergedOcc.setSimilarityScore(mixture.getScore(mergedOcc))
 
             mergedOcc
@@ -78,4 +81,22 @@ class DBMergedDisambiguator(
 
   def name = "Merged 2 Step disambiguator"
 
+}
+
+object DBMergedDisambiguator {
+  val PGraph = "P(graph)"
+  val PStat = "P(stat)"
+
+  val WGraph = 0.35
+  val WStat = 0.65
+
+  def defaultWeightTwoFeatures(graphDisambiguator: ParagraphDisambiguator, statDisambiguator: ParagraphDisambiguator) = {
+    new DBMergedDisambiguator(graphDisambiguator, statDisambiguator,
+      new LinearRegressionFeatureMixture(List((PStat, WStat), (PGraph, WGraph)), 0))
+  }
+
+  def defaultWeightFourFeatures(graphDisambiguator: ParagraphDisambiguator, statDisambiguator: ParagraphDisambiguator) = {
+    new DBMergedDisambiguator(graphDisambiguator, statDisambiguator,
+      new LinearRegressionFeatureMixture(List(("P(e)", -0.0216), ("P(c|e)", -0.0005), ("P(s|e)", -0.2021), (PGraph, 0.25)), 0))
+  }
 }

@@ -101,7 +101,7 @@ class DBGraphDisambiguator(
           val normalizedScore = o.similarityScore / similarityScoreSum
           SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource.uri, o.similarityScore, normalizedScore)
           o.setSimilarityScore(normalizedScore)
-          o.setFeature(new Score("P(g|e)", normalizedScore))
+          o.setFeature(new Score(DBMergedDisambiguator.PGraph, normalizedScore))
         }
       }
 
