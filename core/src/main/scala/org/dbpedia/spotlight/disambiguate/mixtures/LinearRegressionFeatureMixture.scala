@@ -17,7 +17,7 @@ class LinearRegressionFeatureMixture(weightedFeatures: List[Pair[String, Double]
   def getScore(occurrence: DBpediaResourceOccurrence) : Double = {
 
     weightedFeatures.map{ case (f, w) =>
-      occurrence.featureValue[Double](f).getOrElse(0.0) * w
+      occurrence.featureValue[Double](f).get * w
     }.sum + offset
 
   }
