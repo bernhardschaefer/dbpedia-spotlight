@@ -2,17 +2,15 @@ package org.dbpedia.spotlight.learning
 
 import java.io.File
 import org.dbpedia.spotlight.corpus.AidaCorpus
-import org.dbpedia.spotlight.db.DBTwoStepDisambiguator
-import org.dbpedia.spotlight.db.SpotlightModel
+import org.dbpedia.spotlight.db.{ DBTwoStepDisambiguator, SpotlightModel }
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.evaluation.EvalUtils
 import org.dbpedia.spotlight.io.AnnotatedTextSource
 import org.dbpedia.spotlight.log.SpotlightLog
-import org.dbpedia.spotlight.model.AnnotatedParagraph
-import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
-import org.dbpedia.spotlight.model.Factory
+import org.dbpedia.spotlight.model.{ AnnotatedParagraph, DBpediaResourceOccurrence, Factory, SurfaceFormOccurrence }
 import org.dbpedia.spotlight.model.SpotlightConfiguration.DisambiguationPolicy
-import org.dbpedia.spotlight.model.SurfaceFormOccurrence
+import org.dbpedia.spotlight.disambiguate.mixtures.FeatureNormalizer
+import org.dbpedia.spotlight.disambiguate.mixtures.SpotlightSemiLinearFeatureNormalizer
 
 object CorpusLearner {
   val correctTarget = 1.0
@@ -24,22 +22,23 @@ object CorpusLearner {
 
     val db = SpotlightModel.fromFolder(new File(args(0)))
     // add tokenizer for DBTwoStepDisambiguator to prevent exception
-    db.disambiguators.get(DisambiguationPolicy.Default).disambiguator.asInstanceOf[DBTwoStepDisambiguator].tokenizer = db.tokenizer;
-    val mergedDisambiguator = db.disambiguators.get(DisambiguationPolicy.Merged)
+    val statDisambiguator = db.disambiguators.get(DisambiguationPolicy.Default).disambiguator.asInstanceOf[DBTwoStepDisambiguator]
+    statDisambiguator.tokenizer = db.tokenizer;
+    //    val mergedDisambiguator = db.disambiguators.get(DisambiguationPolicy.Merged).disambiguator
 
-    val featureExtraction = new MergedSemiLinearFeatureExtraction()
+    val featureNormalizer = new SpotlightSemiLinearFeatureNormalizer()
     val trainingDataHandlers = List(
       new DumpTsvTrainingDataHandler("%s-%s.data.tsv".format(corpus.name, EvalUtils.now())),
       new DumpVowpalTrainingDataHandler("%s-%s.data.vw".format(corpus.name, EvalUtils.now())),
       new LinRegTrainingDataHandler("%s-%s.weights.tsv".format(corpus.name, EvalUtils.now())))
 
-    val corpusLearner = new CorpusLearner(featureExtraction, trainingDataHandlers)
-    corpusLearner.learnFeatureWeights(corpus, mergedDisambiguator.disambiguator)
+    val corpusLearner = new CorpusLearner(trainingDataHandlers, featureNormalizer)
+    corpusLearner.learnFeatureWeights(corpus, statDisambiguator)
   }
 
 }
 
-class CorpusLearner(val featureExtraction: FeatureExtraction, val trainingDataHandlers: List[TrainingDataHandler]) {
+class CorpusLearner(val trainingDataHandlers: List[TrainingDataHandler], val featureNormalizer: FeatureNormalizer) {
   /**
    * for each document of gs
    * 1. get all gold standard spots
@@ -80,8 +79,8 @@ class CorpusLearner(val featureExtraction: FeatureExtraction, val trainingDataHa
       case Some(occ) => {
         SpotlightLog.debug(this.getClass(), "Found %s entity %s", target, occ.resource.uri)
         stats.add(target, true)
-        val features = featureExtraction.fromOcc(occ)
-        trainingDataHandlers.foreach(_.addCase(target, features, occ))
+        val featuresScores = featureNormalizer.fromOcc(occ)
+        trainingDataHandlers.foreach(_.addCase(target, featuresScores, occ))
       }
       case None => {
         SpotlightLog.debug(this.getClass(), "No incorrect entity found for %d:%s", sfo.textOffset, sfo.surfaceForm.name)

@@ -1,11 +1,11 @@
 package org.dbpedia.spotlight.db
 
-import concurrent.{TokenizerWrapper, SpotterWrapper}
+import concurrent.{ TokenizerWrapper, SpotterWrapper }
 import memory.MemoryStore
 import model._
-import opennlp.tools.tokenize.{TokenizerModel, TokenizerME}
-import opennlp.tools.sentdetect.{SentenceModel, SentenceDetectorME}
-import opennlp.tools.postag.{POSModel, POSTaggerME}
+import opennlp.tools.tokenize.{ TokenizerModel, TokenizerME }
+import opennlp.tools.sentdetect.{ SentenceModel, SentenceDetectorME }
+import opennlp.tools.postag.{ POSModel, POSTaggerME }
 import org.dbpedia.spotlight.disambiguate.mixtures.UnweightedMixture
 import similarity.GenerativeContextSimilarity
 import scala.collection.JavaConverters._
@@ -13,21 +13,22 @@ import org.dbpedia.spotlight.graphdb.DBGraphDisambiguator
 import org.dbpedia.spotlight.model.SpotterConfiguration.SpotterPolicy
 import org.dbpedia.spotlight.model.SpotlightConfiguration.DisambiguationPolicy
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguatorJ
-import org.dbpedia.spotlight.spot.{SpotXmlParser, Spotter}
-import java.io.{IOException, File, FileInputStream}
-import java.util.{Locale, Properties}
+import org.dbpedia.spotlight.spot.{ SpotXmlParser, Spotter }
+import java.io.{ IOException, File, FileInputStream }
+import java.util.{ Locale, Properties }
 import opennlp.tools.chunker.ChunkerModel
 import opennlp.tools.namefind.TokenNameFinderModel
 import stem.SnowballStemmer
-import tokenize.{OpenNLPTokenizer, LanguageIndependentTokenizer}
+import tokenize.{ OpenNLPTokenizer, LanguageIndependentTokenizer }
 import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
 import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
-
+import org.dbpedia.spotlight.disambiguate.mixtures.NormalizedLinearRegressionFeatureMixture
+import org.dbpedia.spotlight.disambiguate.mixtures.SpotlightSemiLinearFeatureNormalizer
 
 class SpotlightModel(val tokenizer: TextTokenizer,
-                     val spotters: java.util.Map[SpotterPolicy, Spotter],
-                     val disambiguators: java.util.Map[DisambiguationPolicy, ParagraphDisambiguatorJ],
-                     val properties: Properties)
+  val spotters: java.util.Map[SpotterPolicy, Spotter],
+  val disambiguators: java.util.Map[DisambiguationPolicy, ParagraphDisambiguatorJ],
+  val properties: Properties)
 
 object SpotlightModel {
 
@@ -41,12 +42,11 @@ object SpotlightModel {
       new File(modelDataFolder, "tokens.mem"),
       new File(modelDataFolder, "sf.mem"),
       new File(modelDataFolder, "res.mem"),
-      new File(modelDataFolder, "candmap.mem")
-    ).foreach {
-      modelFile: File =>
-        if (!modelFile.exists())
-          throw new IOException("Invalid Spotlight model folder: Could not read required file %s in %s.".format(modelFile.getName, modelFile.getPath))
-    }
+      new File(modelDataFolder, "candmap.mem")).foreach {
+        modelFile: File =>
+          if (!modelFile.exists())
+            throw new IOException("Invalid Spotlight model folder: Could not read required file %s in %s.".format(modelFile.getName, modelFile.getPath))
+      }
 
     val tokenTypeStore = MemoryStore.loadTokenTypeStore(new FileInputStream(new File(modelDataFolder, "tokens.mem")))
     val sfStore = MemoryStore.loadSurfaceFormStore(new FileInputStream(new File(modelDataFolder, "sf.mem")))
@@ -78,7 +78,7 @@ object SpotlightModel {
     val c = properties.getProperty("opennlp_parallel", Runtime.getRuntime.availableProcessors().toString).toInt
     val cores = (1 to c)
 
-    val tokenizer: TextTokenizer = if(new File(modelFolder, "opennlp").exists()) {
+    val tokenizer: TextTokenizer = if (new File(modelFolder, "opennlp").exists()) {
 
       //Create the tokenizer:
       val posTagger = new File(modelFolder, "opennlp/pos-maxent.bin")
@@ -91,10 +91,9 @@ object SpotlightModel {
         stemmer(),
         new SentenceDetectorME(sentenceModel),
         if (posTagger.exists()) new POSTaggerME(new POSModel(new FileInputStream(posTagger))) else null,
-        tokenTypeStore
-      ).asInstanceOf[TextTokenizer]
+        tokenTypeStore).asInstanceOf[TextTokenizer]
 
-      if(cores.size == 1)
+      if (cores.size == 1)
         createTokenizer()
       else
         new TokenizerWrapper(cores.map(_ => createTokenizer())).asInstanceOf[TextTokenizer]
@@ -104,8 +103,8 @@ object SpotlightModel {
       new LanguageIndependentTokenizer(stopwords, stemmer(), new Locale(locale(0), locale(1)), tokenTypeStore)
     }
 
-    val searcher      = new DBCandidateSearcher(resStore, sfStore, candMapStore)
-    
+    val searcher = new DBCandidateSearcher(resStore, sfStore, candMapStore)
+
     val disambiguatorScala = new DBTwoStepDisambiguator(
       tokenTypeStore,
       sfStore,
@@ -113,10 +112,13 @@ object SpotlightModel {
       searcher,
       contextStore,
       new UnweightedMixture(Set("P(e)", "P(c|e)", "P(s|e)")),
-      new GenerativeContextSimilarity(tokenTypeStore)
-    )
+      // Breeze Weights:
+      // new NormalizedLinearRegressionFeatureMixture(List(("P(e)", 132.5712), ("P(c|e)", 0.2709), ("P(s|e)", 0.5793)), 0, new SpotlightSemiLinearFeatureNormalizer()),
+      // Vowpal Rabbit Weights:
+      // new NormalizedLinearRegressionFeatureMixture(List(("P(e)", 295.992798), ("P(c|e)", 0.350955), ("P(s|e)", 0.282689)), 0.073488, new SpotlightSemiLinearFeatureNormalizer()),
+      new GenerativeContextSimilarity(tokenTypeStore))
     val disambiguator = new ParagraphDisambiguatorJ(disambiguatorScala)
-    
+
     val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
     val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
@@ -124,9 +126,9 @@ object SpotlightModel {
     val mergedDisambiguator = new ParagraphDisambiguatorJ(DBMergedDisambiguator.defaultWeightTwoFeatures(
       graphDisambiguatorScala,
       disambiguatorScala))
-    
+
     //If there is at least one NE model or a chunker, use the OpenNLP spotter:
-    val spotter = if( new File(modelFolder, "opennlp").exists() && new File(modelFolder, "opennlp").list().exists(f => f.startsWith("ner-") || f.startsWith("chunker")) ) {
+    val spotter = if (new File(modelFolder, "opennlp").exists() && new File(modelFolder, "opennlp").list().exists(f => f.startsWith("ner-") || f.startsWith("chunker"))) {
       val nerModels = new File(modelFolder, "opennlp").list().filter(_.startsWith("ner-")).map { f: String =>
         new TokenNameFinderModel(new FileInputStream(new File(new File(modelFolder, "opennlp"), f)))
       }.toList
@@ -142,15 +144,13 @@ object SpotlightModel {
         nerModels,
         sfStore,
         stopwords,
-        Some(loadSpotterThresholds(new File(modelFolder, "spotter_thresholds.txt")))
-      ).asInstanceOf[Spotter]
+        Some(loadSpotterThresholds(new File(modelFolder, "spotter_thresholds.txt")))).asInstanceOf[Spotter]
 
-      if(cores.size == 1)
+      if (cores.size == 1)
         createSpotter()
       else
         new SpotterWrapper(
-          cores.map(_ => createSpotter())
-        ).asInstanceOf[Spotter]
+          cores.map(_ => createSpotter())).asInstanceOf[Spotter]
 
     } else {
       val dict = MemoryStore.loadFSADictionary(new FileInputStream(new File(modelFolder, "fsa_dict.mem")))
@@ -159,16 +159,14 @@ object SpotlightModel {
         dict,
         sfStore,
         Some(loadSpotterThresholds(new File(modelFolder, "spotter_thresholds.txt"))),
-        stopwords
-      ).asInstanceOf[Spotter]
+        stopwords).asInstanceOf[Spotter]
     }
-
 
     val spotters: java.util.Map[SpotterPolicy, Spotter] = Map(SpotterPolicy.SpotXmlParser -> new SpotXmlParser(), SpotterPolicy.Default -> spotter).asJava
     val disambiguators: java.util.Map[DisambiguationPolicy, ParagraphDisambiguatorJ] = Map(
-        DisambiguationPolicy.Default -> disambiguator, 
-        DisambiguationPolicy.GraphBased -> graphDisambiguator,
-        DisambiguationPolicy.Merged -> mergedDisambiguator).asJava
+      DisambiguationPolicy.Default -> disambiguator,
+      DisambiguationPolicy.GraphBased -> graphDisambiguator,
+      DisambiguationPolicy.Merged -> mergedDisambiguator).asJava
     new SpotlightModel(tokenizer, spotters, disambiguators, properties)
   }
 }

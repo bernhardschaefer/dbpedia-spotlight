@@ -1,14 +1,20 @@
-package org.dbpedia.spotlight.learning
+package org.dbpedia.spotlight.disambiguate.mixtures
 
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import breeze.linalg.DenseVector
 import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
 
-trait FeatureExtraction {
+trait FeatureNormalizer {
   def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)]
 }
 
-class SpotlightSemiLinearFeatureExtraction extends FeatureExtraction {
+class DefaultFeatureNormalizer extends FeatureNormalizer {
+  def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
+    List("P(e)", "P(c|e)", "P(s|e)").map(f => (f, occ.featureValue[Double](f).get))
+  }
+}
+
+class SpotlightSemiLinearFeatureNormalizer extends FeatureNormalizer {
   def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
     List(
       ("P(e)", Math.exp(occ.featureValue[Double]("P(e)").get)),
@@ -17,7 +23,7 @@ class SpotlightSemiLinearFeatureExtraction extends FeatureExtraction {
   }
 }
 
-class MergedTwoFeatureExtraction extends FeatureExtraction {
+class MergedTwoFeatureNormalizer extends FeatureNormalizer {
   def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
     List(
       (DBMergedDisambiguator.PStat, occ.featureValue[Double](DBMergedDisambiguator.PStat).get),
@@ -25,7 +31,7 @@ class MergedTwoFeatureExtraction extends FeatureExtraction {
   }
 }
 
-class MergedSemiLinearFeatureExtraction extends FeatureExtraction {
+class MergedSemiLinearFeatureNormalizer extends FeatureNormalizer {
   def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
     List(
       ("P(e)", Math.exp(occ.featureValue[Double]("P(e)").get)),
