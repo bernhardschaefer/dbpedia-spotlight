@@ -48,9 +48,9 @@ class DumpVowpalTrainingDataHandler(val fileName: String) extends TrainingDataHa
     // 1 foo[53]->bar| P(e):0.001753937852 P(c/e):0.090909090909 P(s/e):0.443444273363 P(g/e):0.000000000000
     // execute as follows: ./vw file.data.vw --invert_hash file.vw.model
     val featuresString = features.foldLeft(new StringBuilder())((builder, pair) => {
-      builder ++= " %s:%.12f".format(pair._1, pair._2)
+      builder ++= " %s:%.12f".format(pair._1.replaceAll("\\|", ""), pair._2)
     }).toString()
-    val sfName = occ.surfaceForm.name.replaceAll("\\|", "/").replaceAll(" ", "_")
+    val sfName = occ.surfaceForm.name.replaceAll(" ", "_")
     writer.println("%f %s[%d]->%s|%s".format(target, sfName, occ.textOffset, occ.resource.uri, featuresString))
   }
 
