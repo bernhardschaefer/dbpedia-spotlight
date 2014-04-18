@@ -112,18 +112,13 @@ object SpotlightModel {
       searcher,
       contextStore,
       new UnweightedMixture(Set("P(e)", "P(c|e)", "P(s|e)")),
-      // Breeze Weights:
-      // new NormalizedLinearRegressionFeatureMixture(List(("P(e)", 132.5712), ("P(c|e)", 0.2709), ("P(s|e)", 0.5793)), 0, new SpotlightSemiLinearFeatureNormalizer()),
-      // Vowpal Rabbit Weights:
-      // new NormalizedLinearRegressionFeatureMixture(List(("P(e)", 295.992798), ("P(c|e)", 0.350955), ("P(s|e)", 0.282689)), 0.073488, new SpotlightSemiLinearFeatureNormalizer()),
       new GenerativeContextSimilarity(tokenTypeStore))
     val disambiguator = new ParagraphDisambiguatorJ(disambiguatorScala)
 
     val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
     val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
-    //TODO switch to four features when proper weights have been learned 
-    val mergedDisambiguator = new ParagraphDisambiguatorJ(DBMergedDisambiguator.defaultWeightTwoFeatures(
+    val mergedDisambiguator = new ParagraphDisambiguatorJ(DBMergedDisambiguator.defaultWeightFourFeatures(
       graphDisambiguatorScala,
       disambiguatorScala))
 

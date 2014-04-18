@@ -2,7 +2,9 @@ package org.dbpedia.spotlight.graphdb
 
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
 import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
+import org.dbpedia.spotlight.disambiguate.mixtures.MergedSemiLinearFeatureNormalizer
 import org.dbpedia.spotlight.disambiguate.mixtures.Mixture
+import org.dbpedia.spotlight.disambiguate.mixtures.NormalizedLinearRegressionFeatureMixture
 import org.dbpedia.spotlight.log.SpotlightLog
 import org.dbpedia.spotlight.model.DBpediaResourceOccurrence
 import org.dbpedia.spotlight.model.Paragraph
@@ -97,6 +99,9 @@ object DBMergedDisambiguator {
 
   def defaultWeightFourFeatures(graphDisambiguator: ParagraphDisambiguator, statDisambiguator: ParagraphDisambiguator) = {
     new DBMergedDisambiguator(graphDisambiguator, statDisambiguator,
-      new LinearRegressionFeatureMixture(List(("P(e)", -0.0216), ("P(c|e)", -0.0005), ("P(s|e)", -0.2021), (PGraph, 0.25)), 0))
+      new NormalizedLinearRegressionFeatureMixture(
+        // vowpal wabbit weights
+        List(("P(e)", 186.894287), ("P(c|e)", 0.314567), ("P(s|e)", 0.155955), (PGraph, 0.184077)), 0.086976,
+        new MergedSemiLinearFeatureNormalizer()))
   }
 }
