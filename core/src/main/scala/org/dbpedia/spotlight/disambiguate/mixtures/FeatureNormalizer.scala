@@ -10,19 +10,7 @@ trait FeatureNormalizer {
 
 class DefaultFeatureNormalizer extends FeatureNormalizer {
   def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
-    List("P(e)", "P(c|e)", "P(s|e)").map(f => (f, occ.featureValue[Double](f).get))
-  }
-}
-
-class SpotlightSemiLinearFeatureNormalizer extends FeatureNormalizer {
-  def fromOcc(occ: DBpediaResourceOccurrence): List[(String, Double)] = {
-    List(
-      ("P(e)", Math.exp(occ.featureValue[Double]("P(e)").get)),
-      ("P(c|e)", occ.contextualScore), //TODO this does not work since contextual score is not set before mixture.getScore() is called
-      ("P(s|e)", occ.featureValue[Double]("P(s|e)") match {
-        case Some(score) => Math.exp(score)
-        case None => 0.0 // NIL Entity has no P(s|e)
-      }))
+    List("P(e)", "P(c|e)", "P(s|e)").map(f => (f, occ.featureValue[Double](f).getOrElse(0.0))) // 0.0 fallback since NIL Entity has no P(s|e)
   }
 }
 
