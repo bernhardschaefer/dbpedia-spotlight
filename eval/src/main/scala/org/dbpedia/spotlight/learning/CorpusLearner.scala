@@ -52,6 +52,7 @@ class CorpusLearner(val trainingDataHandlers: List[TrainingDataHandler], val fea
     val stats = new EntityStats()
 
     // filter all documents without annotations and all NIL annotations
+    //TODO use OccurrenceFilters from EvaluateParagraphDisambiguator 
     val filteredCorpus = corpus.filter(_.occurrences.nonEmpty).map(doc => {
       val filteredOccs = doc.occurrences.filter(!_.resource.uri.equals(AidaCorpus.nilUri))
       new AnnotatedParagraph(doc.id, doc.text, filteredOccs)
