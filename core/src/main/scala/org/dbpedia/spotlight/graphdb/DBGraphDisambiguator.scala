@@ -71,16 +71,6 @@ class DBGraphDisambiguator(
   }
 
   def normalizeScores(sfOccs: Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]]): Map[SurfaceFormOccurrence, List[DBpediaResourceOccurrence]] = {
-    // set confidence as percentageOfSecondRank
-    //    sfOccs.foreach {
-    //      case (sf, candOccs) =>
-    //        (1 to candOccs.size - 1).foreach { i: Int =>
-    //          val top = candOccs(i - 1)
-    //          val bottom = candOccs(i)
-    //          top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
-    //        }
-    //    }
-
     sfOccs.foreach(kv => {
       val sf = kv._1
       val candOccs = kv._2
@@ -88,17 +78,14 @@ class DBGraphDisambiguator(
       (1 to candOccs.size - 1).foreach { i: Int =>
         val top = candOccs(i - 1)
         val bottom = candOccs(i)
-        top.setPercentageOfSecondRank(breeze.numerics.exp(bottom.similarityScore - top.similarityScore))
+        top.setPercentageOfSecondRank(if (top.similarityScore != 0.0) bottom.similarityScore / top.similarityScore else 0.0)
       }
 
-      //Compute the final score as a softmax function, get the total score first:
-      // val similaritySoftMaxTotal = linalg.softmax(candOccs.map(_.similarityScore))
       val similarityScoreSum = candOccs.foldLeft(0.0)(_ + _.similarityScore)
 
       candOccs.foreach { o: DBpediaResourceOccurrence =>
         {
-          // val normalizedScore = breeze.numerics.exp(o.similarityScore - similaritySoftMaxTotal) // e^xi / \sum e^xi
-          val normalizedScore = o.similarityScore / similarityScoreSum
+          val normalizedScore = if (similarityScoreSum != 0.0) o.similarityScore / similarityScoreSum else 0.0
           SpotlightLog.debug(this.getClass(), "%s -> %s: score: %.3f, norm. score: %.3f", o.surfaceForm, o.resource.uri, o.similarityScore, normalizedScore)
           o.setSimilarityScore(normalizedScore)
           o.setFeature(new Score(DBMergedDisambiguator.PGraph, normalizedScore))
