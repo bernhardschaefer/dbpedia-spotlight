@@ -3,9 +3,9 @@ package org.dbpedia.spotlight.learning
 import java.io.File
 
 import org.dbpedia.spotlight.corpus.AidaCorpus
-import org.dbpedia.spotlight.db.{ DBTwoStepDisambiguator, SpotlightModel }
+import org.dbpedia.spotlight.db._
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguator
-import org.dbpedia.spotlight.disambiguate.mixtures.{ FeatureNormalizer, MergedSemiLinearFeatureNormalizer }
+import org.dbpedia.spotlight.disambiguate.mixtures._
 import org.dbpedia.spotlight.evaluation.EvalUtils
 import org.dbpedia.spotlight.io.AnnotatedTextSource
 import org.dbpedia.spotlight.log.SpotlightLog

@@ -89,12 +89,10 @@ object DBMergedDisambiguator {
   val PGraph = "P(graph)"
   val PStat = "P(stat)"
 
-  val WGraph = 0.35
-  val WStat = 0.65
-
   def defaultWeightTwoFeatures(graphDisambiguator: ParagraphDisambiguator, statDisambiguator: ParagraphDisambiguator) = {
     new DBMergedDisambiguator(graphDisambiguator, statDisambiguator,
-      new LinearRegressionFeatureMixture(List((PStat, WStat), (PGraph, WGraph)), 0))
+      //new LinearRegressionFeatureMixture(List((PStat, 0.401804), (PGraph, 0.263434)), 0.056802)) // vowpal wabbit mit best-7 graph-based
+      new LinearRegressionFeatureMixture(List((PStat, 0.44507077855000726), (PGraph, 0.3880231012993819)), 0)) // breeze mit best-7
   }
 
   def defaultWeightFourFeatures(graphDisambiguator: ParagraphDisambiguator, statDisambiguator: ParagraphDisambiguator) = {

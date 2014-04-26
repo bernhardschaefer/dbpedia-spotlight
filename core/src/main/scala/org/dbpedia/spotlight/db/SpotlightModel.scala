@@ -10,6 +10,7 @@ import org.dbpedia.spotlight.disambiguate.mixtures.UnweightedMixture
 import similarity.GenerativeContextSimilarity
 import scala.collection.JavaConverters._
 import org.dbpedia.spotlight.graphdb.DBGraphDisambiguator
+import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
 import org.dbpedia.spotlight.model.SpotterConfiguration.SpotterPolicy
 import org.dbpedia.spotlight.model.SpotlightConfiguration.DisambiguationPolicy
 import org.dbpedia.spotlight.disambiguate.ParagraphDisambiguatorJ
@@ -20,10 +21,6 @@ import opennlp.tools.chunker.ChunkerModel
 import opennlp.tools.namefind.TokenNameFinderModel
 import stem.SnowballStemmer
 import tokenize.{ OpenNLPTokenizer, LanguageIndependentTokenizer }
-import org.dbpedia.spotlight.graphdb.DBMergedDisambiguator
-import org.dbpedia.spotlight.disambiguate.mixtures.LinearRegressionFeatureMixture
-import org.dbpedia.spotlight.disambiguate.mixtures.NormalizedLinearRegressionFeatureMixture
-import org.dbpedia.spotlight.disambiguate.mixtures.SpotlightSemiLinearFeatureNormalizer
 
 class SpotlightModel(val tokenizer: TextTokenizer,
   val spotters: java.util.Map[SpotterPolicy, Spotter],
@@ -118,7 +115,7 @@ object SpotlightModel {
     val graphDisambiguatorScala = DBGraphDisambiguator.fromDefaultConfig(searcher, sfStore)
     val graphDisambiguator = new ParagraphDisambiguatorJ(graphDisambiguatorScala)
 
-    val mergedDisambiguator = new ParagraphDisambiguatorJ(DBMergedDisambiguator.defaultWeightFourFeatures(
+    val mergedDisambiguator = new ParagraphDisambiguatorJ(DBMergedDisambiguator.defaultWeightTwoFeatures(
       graphDisambiguatorScala,
       disambiguatorScala))
 
